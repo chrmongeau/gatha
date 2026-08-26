@@ -186,7 +186,7 @@ function run(session: Session, resumed: boolean): void {
 
   const first = session.read();
   const endEarly = (): void => {
-    const at = session.read().elapsedMs;
+    const at = session.elapsedMs;
     log.add(at, 'ended early');
     stop(at, true);
     // Ending early normally just goes back. While testing it must not throw
@@ -217,7 +217,7 @@ function run(session: Session, resumed: boolean): void {
   log.add(first.elapsedMs, `${String(scheduled.length)} bells scheduled, audio ${audioState(engine)}`);
 
   void wakeLock.acquire().then(() => {
-    log.add(session.read().elapsedMs, `wake lock ${wakeLock.held ? 'held' : 'NOT held'}`);
+    log.add(session.elapsedMs, `wake lock ${wakeLock.held ? 'held' : 'NOT held'}`);
   });
 
   const view = createSittingView({
@@ -288,7 +288,7 @@ function run(session: Session, resumed: boolean): void {
    */
   const resyncAudio = (reason: string): void => {
     if (!running || engine === null) return;
-    const at = session.read().elapsedMs;
+    const at = session.elapsedMs;
     engine.resume();
     const drift = engine.resync(session.remainingBells(at), at);
     log.add(at, `resync on ${reason}: audio ${engine.state}, drift ${drift.toFixed(1)}s`);
@@ -321,7 +321,7 @@ function run(session: Session, resumed: boolean): void {
   };
 
   function onVisibilityChange(): void {
-    const at = session.read().elapsedMs;
+    const at = session.elapsedMs;
     if (document.visibilityState !== 'visible') {
       log.add(at, `hidden, audio ${audioState(engine)}, lock ${wakeLock.held ? 'held' : 'released'}`);
       return;

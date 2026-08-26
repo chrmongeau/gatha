@@ -65,7 +65,9 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
 
   const ctx = new Constructor();
   const master = ctx.createGain();
-  master.gain.value = 1;
+  // Headroom, so overlapping strikes and the strike transient cannot push a
+  // ringing back over full scale.
+  master.gain.value = 0.9;
   master.connect(ctx.destination);
 
   const keepAlive = startKeepAlive(ctx);

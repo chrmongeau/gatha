@@ -204,6 +204,42 @@ Whether this is enough cannot be settled here. The freeze is the browser's
 decision and the fix is a hypothesis about what drives it, well-founded but
 untested on a device.
 
+**Device test 3 — the freeze is fixed, and the bell was clipping**
+
+Three minutes, screen locked after the opening bell. No `page FROZEN` line;
+heartbeats every 30.0s straight through the locked period, so the page stayed
+fully alive and was not even throttled; audio clock drift of 0.1s over three
+minutes; every bell heard. The keepalive level was the whole problem.
+
+The same run reported the opening and closing bells as scratchy while the
+interval bell was fine, and that difference is the diagnosis. The five partials
+share one 5ms attack, so their peaks coincide and sum, and nothing normalised
+them. Measured against the real summed waveform:
+
+    opening   1.473  clipped
+    interval  0.873  clean
+    closing   1.479  clipped
+
+The interval bell is quieter (voice gain 0.5 against 0.85), which is exactly why
+it was the only one under full scale and the only one that sounded right.
+Partial gains are now divided by their total, master gain carries 0.9 for
+headroom, and the peaks are 0.62 / 0.37 / 0.62. `bell.test.ts` asserts no bell's
+summed peak crosses unity, so this cannot come back silently.
+
+The strike transient was also shortened from 60ms to 30ms, narrowed, and
+lowered — a long broad noise burst reads as a scrape rather than a strike. That
+one is a judgement, not a measurement.
+
+**A bug introduced by the previous fix**
+
+Making the audio resync reachable from several events meant several callers
+asking the session for the time, and `read()` advances the bell cursor. The
+resync was consuming bells before the animation frame could act on them — the
+test 3 log shows a whole session with no bell lines between the opening and the
+finish. `Session.elapsedMs` now reports the time without consuming anything, and
+`read()` is called from exactly two places. Worth remembering: a reader that
+mutates is a trap the second caller always falls into.
+
 **Verified here**
 
 `npm run typecheck`, `lint`, `test` (49 tests), `build` all pass, and the built

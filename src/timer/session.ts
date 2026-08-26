@@ -179,6 +179,17 @@ export class Session {
     };
   }
 
+  /**
+   * Elapsed time on its own, without consuming any bell that has fallen due.
+   *
+   * Anything that only wants the clock must use this. `read()` advances the
+   * bell cursor, so calling it from a second place silently swallows the bells
+   * the caller of `read()` was waiting for.
+   */
+  get elapsedMs(): number {
+    return this.measure();
+  }
+
   /** Bells still ahead of the given elapsed time, for handing to the audio clock. */
   remainingBells(elapsedMs: number): ScheduledBell[] {
     return this.schedule.filter((bell) => bell.offsetMs >= elapsedMs);

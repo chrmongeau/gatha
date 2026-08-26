@@ -148,6 +148,33 @@ describe('a session running normally', () => {
   });
 });
 
+describe('reading the clock without consuming bells', () => {
+  it('reports elapsed time without taking the bells that have fallen due', () => {
+    const clock = new TestClock();
+    const session = Session.start(TEN_MINUTES, clock);
+
+    clock.advance(10_000);
+
+    // Whatever else asks the session for the time — a resync, a log line — must
+    // not swallow the bell the animation frame is about to report.
+    expect(session.elapsedMs).toBe(10_000);
+    expect(session.elapsedMs).toBe(10_000);
+
+    expect(kinds(session.read().due)).toEqual(['opening']);
+  });
+
+  it('still never goes backwards when only peeked at', () => {
+    const clock = new TestClock();
+    const session = Session.start(TEN_MINUTES, clock);
+
+    clock.advance(60_000);
+    expect(session.elapsedMs).toBe(60_000);
+
+    clock.shiftWall(-30_000);
+    expect(session.elapsedMs).toBe(60_000);
+  });
+});
+
 describe('a suspension mid-session', () => {
   it('resyncs after forty minutes asleep without firing a backlog', () => {
     const clock = new TestClock();

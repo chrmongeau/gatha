@@ -14,6 +14,18 @@ const PARTIAL_RATIOS = [1, 2.0, 2.7, 4.2, 5.4] as const;
 const PARTIAL_GAINS = [1, 0.5, 0.34, 0.2, 0.11] as const;
 
 /**
+ * Every partial starts on the same 5ms attack, so their peaks land together and
+ * sum coherently. Dividing by the total keeps a strike inside unity however many
+ * partials it has.
+ *
+ * Without this the opening and closing bells peaked at 1.83 — most of a doubling
+ * past full scale — and the output clipped. It was audible on a phone as a
+ * scratchiness on those two bells but not on the quieter interval bell, which
+ * only just crossed the line.
+ */
+const PARTIAL_GAIN_TOTAL = PARTIAL_GAINS.reduce((total, gain) => total + gain, 0);
+
+/**
  * Decay per partial, as a fraction of the fundamental's. High partials die away
  * first — with an 8s fundamental this runs 8s down to about 1.5s.
  */
@@ -116,7 +128,7 @@ export function strikeBell(
   for (const [index, ratio] of PARTIAL_RATIOS.entries()) {
     const partialGain = PARTIAL_GAINS[index] ?? 0;
     const decay = voice.decaySeconds * (PARTIAL_DECAYS[index] ?? 1);
-    const peak = voice.gain * volume * partialGain;
+    const peak = (voice.gain * volume * partialGain) / PARTIAL_GAIN_TOTAL;
 
     const oscillator = ctx.createOscillator();
     oscillator.type = 'sine';
@@ -141,6 +153,9 @@ export function strikeBell(
 /**
  * The sound of the striker meeting the bowl: a short filtered noise burst.
  * Without it the partials fade up out of nowhere and the bell sounds synthetic.
+ *
+ * Kept brief and narrow. A longer, broader burst reads as a scrape rather than
+ * a strike, which is the other half of sounding scratchy.
  */
 function strikeTransient(
   ctx: BaseAudioContext,
@@ -149,7 +164,7 @@ function strikeTransient(
   destination: AudioNode,
   volume: number,
 ): void {
-  const seconds = 0.06;
+  const seconds = 0.03;
   const frames = Math.max(1, Math.ceil(ctx.sampleRate * seconds));
   const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
   const samples = buffer.getChannelData(0);
@@ -164,10 +179,10 @@ function strikeTransient(
   const filter = ctx.createBiquadFilter();
   filter.type = 'bandpass';
   filter.frequency.value = voice.fundamentalHz * 6;
-  filter.Q.value = 1.2;
+  filter.Q.value = 2.5;
 
   const envelope = ctx.createGain();
-  const peak = voice.gain * volume * 0.09;
+  const peak = voice.gain * volume * 0.05;
   envelope.gain.setValueAtTime(0, at);
   envelope.gain.linearRampToValueAtTime(peak, at + 0.001);
   envelope.gain.exponentialRampToValueAtTime(SILENCE, at + seconds);

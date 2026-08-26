@@ -61,6 +61,31 @@ describe('strikeBell', () => {
     }
   });
 
+  it('never sums past full scale, whatever the bell', () => {
+    // The partials all peak together on the same attack. If their sum crosses
+    // unity the output clips, and a clipped bell sounds scratchy rather than
+    // struck. This is the guard on the arithmetic, not on the taste.
+    for (const kind of ['opening', 'interval', 'closing'] as const) {
+      const ctx = new FakeAudioContext();
+      strikeBell(ctx.asAudioContext(), 0, kind, { random: fixedRandom });
+
+      const peak = ctx.gains.reduce(
+        (total, envelope) => total + (envelope.gain.automation[1]?.value ?? 0),
+        0,
+      );
+      expect(peak, `${kind} bell peaks at ${peak.toFixed(3)}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('keeps the strike transient brief, so it reads as a strike not a scrape', () => {
+    const ctx = new FakeAudioContext();
+
+    strikeBell(ctx.asAudioContext(), 0, 'opening', { random: fixedRandom });
+
+    const [transient] = ctx.bufferSources;
+    expect((transient?.stoppedAt ?? 0) - (transient?.startedAt ?? 0)).toBeLessThanOrEqual(0.04);
+  });
+
   it('descends the partial gains so the fundamental carries the strike', () => {
     const ctx = new FakeAudioContext();
 
