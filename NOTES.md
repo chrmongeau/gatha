@@ -91,6 +91,15 @@ four gates run before the deploy step; a red build does not publish.
 Only the deploy path came forward. The rest of phase 5 — manifest, service
 worker, offline, install — is still phase 5.
 
+`main` had to be created before any of this worked. The repository was empty
+when the first branch was pushed, so GitHub made the feature branch the default
+and no `main` existed — while the `github-pages` environment, created when Pages
+was enabled, had its deployment branch policy pinned to `main`. The first run
+built green and then failed the deploy job in one second with no logs, which is
+what an environment branch-policy rejection looks like. Creating `main` fixed
+it; the next run deployed. If a deploy ever fails instantly with no step logs
+again, look at the environment rule before looking at the workflow.
+
 **Verified here**
 
 `npm run typecheck`, `lint`, `test` (49 tests), `build` all pass, and the built
