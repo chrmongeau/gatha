@@ -225,11 +225,44 @@ function run(session: Session, resumed: boolean): void {
   let frame = 0;
   let running = true;
 
+  /**
+   * SCAFFOLDING. A slow pulse that only writes to the log. Chrome throttles
+   * background timers rather than stopping them, so if these keep appearing
+   * while the screen is locked the page was alive, and if there is a gap it was
+   * frozen. Either answer is decisive, and nothing else can tell us.
+   *
+   * It deliberately does not touch the session: reading it would consume the
+   * bells the animation frame is there to report.
+   */
+  const heartbeat = window.setInterval(() => {
+    const at = systemClock.wall() - session.record.startedAt;
+    log.add(
+      at,
+      `heartbeat (wall), audio ${audioState(engine)}, lock ${
+        wakeLock.held ? 'held' : 'released'
+      }, page ${document.visibilityState}`,
+    );
+  }, 30_000);
+
+  // Chrome freezes a backgrounded page outright under memory pressure. If that
+  // is what kills a session, this is the only trace it leaves.
+  const onFreeze = (): void => {
+    log.add(systemClock.wall() - session.record.startedAt, 'page FROZEN by the browser');
+  };
+  const onResume = (): void => {
+    log.add(systemClock.wall() - session.record.startedAt, 'page thawed');
+  };
+  document.addEventListener('freeze', onFreeze);
+  document.addEventListener('resume', onResume);
+
   const stop = (elapsedMs: number, immediate: boolean): void => {
     if (!running) return;
     running = false;
     cancelAnimationFrame(frame);
+    clearInterval(heartbeat);
     document.removeEventListener('visibilitychange', onVisibilityChange);
+    document.removeEventListener('freeze', onFreeze);
+    document.removeEventListener('resume', onResume);
     view.destroy();
     void wakeLock.release();
     if (storage !== null) clearActiveSession(storage);
@@ -243,8 +276,14 @@ function run(session: Session, resumed: boolean): void {
 
     for (const bell of reading.due) log.add(reading.elapsedMs, `bell ${bell.kind} due`);
     for (const bell of reading.skipped) {
+      // Not a failure: the main thread was asleep when this bell's moment
+      // passed, so it is marked rather than replayed. The audio for it was
+      // scheduled at the start and is unaffected by any of this.
       const late = (reading.elapsedMs - bell.offsetMs) / 1000;
-      log.add(reading.elapsedMs, `bell ${bell.kind} SKIPPED, ${late.toFixed(1)}s late`);
+      log.add(
+        reading.elapsedMs,
+        `bell ${bell.kind} not marked live, ${late.toFixed(1)}s late (audio was scheduled ahead)`,
+      );
     }
 
     if (reading.finished) {

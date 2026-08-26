@@ -148,6 +148,21 @@ re-laid once the page is visible again, and on a locked phone that is too late.
 It is a second line of defence, and the log will now say whether the first one
 held.
 
+**Device test 1 — passed, on Android**
+
+Chrome 151 on Android 10, one minute, screen on and foregrounded throughout.
+Bells at 00:05.0, 00:35.0 and 01:05.0 against a schedule of 5s / 35s / 65s, all
+marked live, none late. Finished at 01:09.0 against a total of 69s. Wake lock
+held. Nothing about suspension is proven by this run: the log carries no
+visibility change, because the page never went to the background.
+
+The run before it was reported as a failure and was not one. The session
+settings were being passed in the URL, the query string did not survive the trip
+to the phone, and the app ran its default ten minutes correctly — which, cut
+short at 2:03, presents as three opening gongs and then silence. Lesson worth
+keeping: a test harness that can fail silently will eventually be read as a
+failure of the thing under test.
+
 **Verified here**
 
 `npm run typecheck`, `lint`, `test` (49 tests), `build` all pass, and the built
