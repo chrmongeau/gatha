@@ -45,9 +45,29 @@ describe('createAudioEngine', () => {
     const engine = createAudioEngine();
     engine?.scheduleFrom(BELLS, 0);
 
-    // The keepalive loop, plus three strikes, one, and three.
-    expect(context().bufferSources[0]?.loop).toBe(true);
-    expect(onsets().slice(1)).toEqual([10, 14, 18, 310, 610, 614.5, 619]);
+    // Three strikes, one, and three.
+    expect(onsets()).toEqual([10, 14, 18, 310, 610, 614.5, 619]);
+  });
+
+  it('holds the tab above the level a browser calls silent', () => {
+    createAudioEngine();
+
+    // Chrome freezes a hidden tab it considers silent, taking every scheduled
+    // bell with it. Its threshold sits near -72 dBFS.
+    // gains[0] is the master; gains[1] is the keepalive's own level.
+    const [keepAlive] = context().oscillators;
+    const level = context().gains[1]?.gain.value ?? 0;
+    const dbfs = 20 * Math.log10(level);
+
+    expect(keepAlive?.startedAt).toBe(0);
+    expect(keepAlive?.stoppedAt).toBeNull();
+    expect(dbfs).toBeGreaterThan(-72);
+  });
+
+  it('keeps the tab alive at a pitch nothing can reproduce or hear', () => {
+    createAudioEngine();
+
+    expect(context().oscillators[0]?.frequency.value).toBeLessThan(40);
   });
 
   it('picks up mid-session without ringing the bells already behind it', () => {
@@ -55,7 +75,7 @@ describe('createAudioEngine', () => {
     engine?.scheduleFrom([BELLS[1], BELLS[2]] as ScheduledBell[], 310_000);
 
     // Anchored so the interval bell is now, and the closing bell 300s out.
-    expect(onsets().slice(1)).toEqual([0, 300, 304.5, 309]);
+    expect(onsets()).toEqual([0, 300, 304.5, 309]);
   });
 
   it('reports how far the audio clock has drifted', () => {
@@ -89,9 +109,7 @@ describe('createAudioEngine', () => {
     context().currentTime = 12;
     engine?.resync([BELLS[1], BELLS[2]] as ScheduledBell[], 300_000);
 
-    const cancelled = context().gains.filter(
-      (gain: FakeGain) => gain.disconnected,
-    );
+    const cancelled = context().gains.filter((gain: FakeGain) => gain.disconnected);
     expect(cancelled).toHaveLength(2);
   });
 

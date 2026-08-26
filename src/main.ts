@@ -185,8 +185,19 @@ function run(session: Session, resumed: boolean): void {
   if (storage !== null) saveActiveSession(session.record, storage);
 
   const first = session.read();
+  const endEarly = (): void => {
+    const at = session.read().elapsedMs;
+    log.add(at, 'ended early');
+    stop(at, true);
+    // Ending early normally just goes back. While testing it must not throw
+    // away the log — that is exactly when the log is worth reading.
+    if (showDiagnostics) renderDone(false);
+    else renderShell(null);
+  };
+
   const engine = createAudioEngine({
     nowPlaying: { title: 'Sitting', artist: 'Gatha' },
+    onStop: endEarly,
   });
   const wakeLock = createScreenWakeLock();
 
@@ -211,15 +222,7 @@ function run(session: Session, resumed: boolean): void {
 
   const view = createSittingView({
     config,
-    onEnd: () => {
-      const at = session.read().elapsedMs;
-      log.add(at, 'ended early');
-      stop(at, true);
-      // Ending early normally just goes back. While testing it must not throw
-      // away the log — that is exactly when the log is worth reading.
-      if (showDiagnostics) renderDone(false);
-      else renderShell(null);
-    },
+    onEnd: endEarly,
   });
 
   let frame = 0;
@@ -242,6 +245,9 @@ function run(session: Session, resumed: boolean): void {
         wakeLock.held ? 'held' : 'released'
       }, page ${document.visibilityState}`,
     );
+    // A throttled background timer is still a chance to notice the audio clock
+    // has fallen behind, and it does not depend on any event firing.
+    if (engine !== null && engine.state !== 'running') resyncAudio('heartbeat');
   }, 30_000);
 
   // Chrome freezes a backgrounded page outright under memory pressure. If that
@@ -251,6 +257,9 @@ function run(session: Session, resumed: boolean): void {
   };
   const onResume = (): void => {
     log.add(systemClock.wall() - session.record.startedAt, 'page thawed');
+    resyncAudio('thaw');
+    cancelAnimationFrame(frame);
+    tick();
   };
   document.addEventListener('freeze', onFreeze);
   document.addEventListener('resume', onResume);
@@ -267,6 +276,22 @@ function run(session: Session, resumed: boolean): void {
     void wakeLock.release();
     if (storage !== null) clearActiveSession(storage);
     closeAudio(engine, config, elapsedMs, immediate);
+  };
+
+  /**
+   * Put the audio back in step with the wall clock.
+   *
+   * Called from every event that can mean the page has come back, because no
+   * single one of them can be relied on: a device test showed a page frozen for
+   * eight minutes and thawed without `visibilitychange` ever firing, so a
+   * recovery hung on that event alone never ran at all.
+   */
+  const resyncAudio = (reason: string): void => {
+    if (!running || engine === null) return;
+    const at = session.read().elapsedMs;
+    engine.resume();
+    const drift = engine.resync(session.remainingBells(at), at);
+    log.add(at, `resync on ${reason}: audio ${engine.state}, drift ${drift.toFixed(1)}s`);
   };
 
   const tick = (): void => {
@@ -302,17 +327,7 @@ function run(session: Session, resumed: boolean): void {
       return;
     }
     log.add(at, `visible, audio ${audioState(engine)}, lock ${wakeLock.held ? 'held' : 'released'}`);
-    // Back from a suspension: recompute from the wall clock rather than
-    // resuming wherever the frames left off.
-    engine?.resume();
-
-    // The audio clock stops while the context is suspended, which would push
-    // every pending bell late by the length of the suspension. Re-lay them.
-    const drift = engine?.resync(session.remainingBells(at), at) ?? 0;
-    if (Math.abs(drift) > 0.25) {
-      log.add(at, `audio clock drifted ${drift.toFixed(1)}s, bells re-laid`);
-    }
-
+    resyncAudio('visible');
     cancelAnimationFrame(frame);
     tick();
   }

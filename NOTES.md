@@ -163,6 +163,47 @@ short at 2:03, presents as three opening gongs and then silence. Lesson worth
 keeping: a test harness that can fail silently will eventually be read as a
 failure of the thing under test.
 
+**Device test 2 — failed, and what it found**
+
+Twenty minutes, Chrome 151 on Android 10, screen locked after the opening bell.
+The bells at 5:00 and 10:00 did not sound. The log:
+
+    01:55.2  page FROZEN by the browser
+    10:28.6  page thawed
+
+Chrome froze the tab ninety seconds after the screen locked and held it frozen
+for eight and a half minutes. Nothing scheduled in the audio clock survives
+that. **SPEC.md section 5's central claim — that the Web Audio scheduler "keeps
+running when the page is backgrounded" — is not true on Android Chrome for a tab
+the browser considers silent.** The advance scheduling is still right; it just
+is not sufficient on its own.
+
+Three faults, all now fixed:
+
+1. *The keepalive was below the threshold it existed to clear.* Chrome's audio
+   power monitor calls a tab silent below about -72 dBFS. The keepalive was
+   white noise at 0.0001, which is -80 dBFS — under the line, so the tab counted
+   as silent and was frozen. It is now a 30 Hz sine at 0.002, about -54 dBFS:
+   eighteen decibels of margin, at a pitch no phone speaker can reproduce.
+2. *That same noise was audible.* Reported as sounding "like an old analogue LP
+   disk" — which is what continuous low-level white noise is. The bell itself
+   has not been touched, so the next listen tells us whether the bell was ever
+   the problem.
+3. *The recovery never ran.* `visibilitychange` did not fire on the way back
+   from the freeze — the log shows `page thawed` with no `visible` line after
+   it — and the audio resync was hung on that event alone. It is now reachable
+   from the thaw, from a visibility change, and from the background heartbeat,
+   and it logs every time it runs rather than only when it finds drift.
+
+Also added a MediaSession `stop` action, so the system treats the sit as active
+media and is correspondingly less willing to freeze it. Only `stop`: a sit has
+no meaningful pause, and a transport control that does nothing is worse than
+none.
+
+Whether this is enough cannot be settled here. The freeze is the browser's
+decision and the fix is a hypothesis about what drives it, well-founded but
+untested on a device.
+
 **Verified here**
 
 `npm run typecheck`, `lint`, `test` (49 tests), `build` all pass, and the built

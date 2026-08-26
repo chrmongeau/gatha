@@ -54,7 +54,8 @@ export class FakeOscillator extends FakeNode {
   startedAt: number | null = null;
   stoppedAt: number | null = null;
 
-  start(when: number): void {
+  /** `when` is optional in the real API and defaults to immediately. */
+  start(when = 0): void {
     this.startedAt = when;
   }
 

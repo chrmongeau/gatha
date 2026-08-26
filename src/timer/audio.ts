@@ -15,6 +15,7 @@ type AudioContextConstructor = new () => AudioContext;
 interface MediaSessionLike {
   metadata: unknown;
   playbackState?: string;
+  setActionHandler?: (action: string, handler: (() => void) | null) => void;
 }
 
 export interface AudioEngineOptions {
@@ -22,6 +23,8 @@ export interface AudioEngineOptions {
   readonly volume?: number;
   /** Shown on the lock screen while the session runs. */
   readonly nowPlaying?: { readonly title: string; readonly artist: string };
+  /** Called if the listener ends the sit from the lock screen. */
+  readonly onStop?: () => void;
 }
 
 export interface AudioEngine {
@@ -66,7 +69,7 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
   master.connect(ctx.destination);
 
   const keepAlive = startKeepAlive(ctx);
-  announce(options.nowPlaying);
+  announce(options.nowPlaying, options.onStop);
 
   let closed = false;
   let placed: PlacedBell[] = [];
@@ -128,6 +131,7 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
       closed = true;
       keepAlive();
       setPlaybackState('none');
+      setActionHandler('stop', null);
       void ctx.close().catch(() => {
         // Already closed by the platform.
       });
@@ -144,33 +148,51 @@ function audioContextConstructor(): AudioContextConstructor | null {
 }
 
 /**
- * A looping, near-silent source. iOS suspends an AudioContext that is not
- * actually playing anything, which would take the scheduled bells down with it.
- * Inaudible, but not digital silence — silence is what gets optimised away.
+ * Below this, a browser calls the tab silent. Chrome's audio power monitor puts
+ * its silence threshold near -72 dBFS, and a tab it considers silent is one it
+ * will freeze outright once hidden — taking every scheduled bell with it. The
+ * first attempt at a keepalive sat at -80 dBFS, under the threshold, and was
+ * frozen ninety seconds after the screen locked.
+ */
+const KEEPALIVE_GAIN = 0.002; // about -54 dBFS: eighteen decibels of margin.
+
+/**
+ * Low enough that no phone speaker can reproduce it and no ear can find it.
+ * Level is what the browser measures, not frequency, so the tab reads as
+ * playing audio while nothing is audible.
+ */
+const KEEPALIVE_HZ = 30;
+
+/**
+ * A continuous inaudible tone, for as long as the session lasts.
+ *
+ * Two jobs: iOS suspends an AudioContext that is not actually playing anything,
+ * and Chrome freezes a hidden tab that is not making a sound. A tone answers
+ * both, where the near-silent noise it replaces answered neither — and that
+ * noise was audible as a faint hiss, which a tone at this frequency is not.
  */
 function startKeepAlive(ctx: AudioContext): () => void {
-  const frames = Math.max(1, Math.floor(ctx.sampleRate));
-  const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
-  const samples = buffer.getChannelData(0);
-  for (let i = 0; i < frames; i += 1) {
-    samples[i] = (Math.random() * 2 - 1) * 0.0001;
-  }
+  const oscillator = ctx.createOscillator();
+  oscillator.type = 'sine';
+  oscillator.frequency.value = KEEPALIVE_HZ;
 
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
-  source.connect(ctx.destination);
-  source.start();
+  const gain = ctx.createGain();
+  gain.gain.value = KEEPALIVE_GAIN;
+
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+  oscillator.start();
 
   void resumeContext(ctx);
 
   return () => {
     try {
-      source.stop();
+      oscillator.stop();
     } catch {
       // Already stopped.
     }
-    source.disconnect();
+    oscillator.disconnect();
+    gain.disconnect();
   };
 }
 
@@ -186,21 +208,41 @@ async function resumeContext(ctx: AudioContext): Promise<void> {
 
 /**
  * Tell the OS this is media, so the session is treated as playing rather than
- * as a stray tab. It also reads nicely on a lock screen.
+ * as a stray tab, and so it reads properly on a lock screen (SPEC.md section 5).
+ *
+ * A tab the system recognises as active media is one it is far less willing to
+ * freeze, which is the failure this is really guarding against. Only `stop` is
+ * offered: a sit has no meaningful pause, and a transport control that does
+ * nothing is worse than no control.
  */
-function announce(nowPlaying: AudioEngineOptions['nowPlaying']): void {
+function announce(
+  nowPlaying: AudioEngineOptions['nowPlaying'],
+  onStop: AudioEngineOptions['onStop'],
+): void {
   const session = mediaSession();
-  if (session === null || nowPlaying === undefined) return;
+  if (session === null) return;
 
   const MetadataConstructor = (globalThis as { MediaMetadata?: new (init: object) => unknown })
     .MediaMetadata;
-  if (MetadataConstructor !== undefined) {
+  if (nowPlaying !== undefined && MetadataConstructor !== undefined) {
     session.metadata = new MetadataConstructor({
       title: nowPlaying.title,
       artist: nowPlaying.artist,
     });
   }
   setPlaybackState('playing');
+  if (onStop !== undefined) setActionHandler('stop', onStop);
+}
+
+/** Unsupported actions throw rather than reporting themselves. */
+function setActionHandler(action: string, handler: (() => void) | null): void {
+  const session = mediaSession();
+  if (session?.setActionHandler === undefined) return;
+  try {
+    session.setActionHandler(action, handler);
+  } catch {
+    // This platform does not offer the action. Nothing is lost.
+  }
 }
 
 function setPlaybackState(state: 'playing' | 'none'): void {
