@@ -69,7 +69,7 @@ the day it was written.
 - **Gentium Plus is not shipped yet.** §9 requires it for canonical text, and
   there is no canonical text on any screen in phase 1. It arrives with the
   corpus, together with the glyph-coverage build check.
-- No `.nojekyll`, no `deploy.yml`, no manifest. Phase 5.
+- No manifest, no service worker, no icons. Phase 5.
 - No volume control and no silent mode (§6). `strikeBell` takes a `volume`
   already; the setting and the screen-brightening substitute need the settings
   UI, which is phase 3/4.
@@ -79,6 +79,17 @@ the day it was written.
   when the fourth view lands.
 - No `import.meta.env.BASE_URL` usage anywhere, because no asset is referenced
   yet. The rule stands for phase 2.
+
+**Pulled forward from phase 5, on request**
+
+`.github/workflows/deploy.yml` and `public/.nojekyll`, so the app can be reached
+over HTTPS on a phone — the phase 1 device test needs a secure context for the
+wake lock, and there is no other way to get one. Deploys on push to `main`, and
+by manual dispatch so a feature branch can be published during testing. The
+four gates run before the deploy step; a red build does not publish.
+
+Only the deploy path came forward. The rest of phase 5 — manifest, service
+worker, offline, install — is still phase 5.
 
 **Verified here**
 
