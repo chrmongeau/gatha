@@ -45,6 +45,8 @@ class FakeNode {
   }
 }
 
+export { FakeNode };
+
 export class FakeOscillator extends FakeNode {
   type = 'sine';
   readonly frequency = new FakeParam();
@@ -63,6 +65,12 @@ export class FakeOscillator extends FakeNode {
 
 export class FakeGain extends FakeNode {
   readonly gain = new FakeParam();
+  disconnected = false;
+
+  override disconnect(): void {
+    this.disconnected = true;
+    super.disconnect();
+  }
 }
 
 export class FakeBufferSource extends FakeNode {
@@ -142,8 +150,25 @@ export class FakeAudioContext {
     return new FakeBuffer(channels, length, sampleRate);
   }
 
+  state = 'running';
+
+  resume(): Promise<void> {
+    this.state = 'running';
+    return Promise.resolve();
+  }
+
+  close(): Promise<void> {
+    this.state = 'closed';
+    return Promise.resolve();
+  }
+
   /** The fake stands in for a BaseAudioContext at the call site. */
   asAudioContext(): BaseAudioContext {
     return this as unknown as BaseAudioContext;
+  }
+
+  /** And for a full AudioContext, where the engine needs one. */
+  asFullContext(): AudioContext {
+    return this as unknown as AudioContext;
   }
 }

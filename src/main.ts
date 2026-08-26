@@ -33,7 +33,43 @@ const DEFAULT_CONFIG: SessionConfig = {
 
 // Device testing only, until the Today screen lands. See timer/test-options.ts.
 const OPTIONS = readTestOptions(window.location.search, DEFAULT_CONFIG);
-const CONFIG = OPTIONS.config;
+
+/**
+ * SCAFFOLDING for phase 1 verification, and nothing more.
+ *
+ * The person testing this works from a phone with no checkout, so the session
+ * length has to be selectable in the app and the log has to be on screen. Query
+ * parameters were the first attempt and proved too easy to lose in transit — a
+ * stripped URL silently runs the default session, which reads as a broken
+ * timer. Buttons cannot be stripped.
+ *
+ * Setting this to false restores the app the spec describes: one Begin button,
+ * ten minutes, no panel. Delete both when the Today screen lands in phase 2.
+ */
+function scaffoldingEnabled(): boolean {
+  return true;
+}
+
+const TEST_PRESETS: readonly { readonly label: string; readonly config: SessionConfig }[] = [
+  {
+    label: '1 min',
+    config: { durationMs: 60_000, intervalMs: 30_000, prepareMs: 5_000, leadOutMs: 4_000 },
+  },
+  {
+    label: '3 min',
+    config: { durationMs: 180_000, intervalMs: 60_000, prepareMs: 5_000, leadOutMs: 6_000 },
+  },
+  { label: '10 min', config: DEFAULT_CONFIG },
+  {
+    label: '20 min',
+    config: { durationMs: 1_200_000, intervalMs: 300_000, prepareMs: 10_000, leadOutMs: 12_000 },
+  },
+];
+
+/** What Begin will start. The URL sets it; a preset button replaces it. */
+let activeConfig: SessionConfig = OPTIONS.config;
+
+const showDiagnostics = scaffoldingEnabled() || OPTIONS.showDiagnostics;
 
 const app = query(document, '#app', HTMLElement);
 const storage = defaultStorage();
@@ -74,11 +110,11 @@ function renderShell(resumable: SessionRecord | null): void {
   const actions = query(shell, '.shell__actions', HTMLElement);
   const begin = query(shell, '.shell__begin', HTMLButtonElement);
   const note = query(shell, '.shell__note', HTMLElement);
-  note.textContent = describe(CONFIG);
+  note.textContent = describe(activeConfig);
 
   if (resumable === null) {
     begin.addEventListener('click', () => {
-      run(Session.start(CONFIG, systemClock), false);
+      run(Session.start(activeConfig, systemClock), false);
     });
   } else {
     begin.textContent = 'Resume';
@@ -92,14 +128,48 @@ function renderShell(resumable: SessionRecord | null): void {
     discard.textContent = 'Start again';
     discard.addEventListener('click', () => {
       if (storage !== null) clearActiveSession(storage);
-      run(Session.start(CONFIG, systemClock), false);
+      run(Session.start(activeConfig, systemClock), false);
     });
     actions.append(discard);
 
     note.textContent = 'A sit is already in progress.';
   }
 
+  if (scaffoldingEnabled() && resumable === null) shell.append(presetPicker(note));
+
   show(shell, begin);
+}
+
+/**
+ * SCAFFOLDING. A row of session lengths, so a device test does not depend on a
+ * URL surviving the trip to the phone. Goes with the rest of it in phase 2.
+ */
+function presetPicker(note: HTMLElement): HTMLElement {
+  const picker = document.createElement('div');
+  picker.className = 'presets';
+  picker.innerHTML = `<p class="presets__label">for testing</p>`;
+
+  const row = document.createElement('div');
+  row.className = 'presets__row';
+
+  for (const preset of TEST_PRESETS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'presets__button';
+    button.textContent = preset.label;
+    button.setAttribute('aria-pressed', String(preset.config === activeConfig));
+    button.addEventListener('click', () => {
+      activeConfig = preset.config;
+      note.textContent = describe(activeConfig);
+      for (const other of row.children) {
+        other.setAttribute('aria-pressed', String(other === button));
+      }
+    });
+    row.append(button);
+  }
+
+  picker.append(row);
+  return picker;
 }
 
 /**
@@ -147,7 +217,7 @@ function run(session: Session, resumed: boolean): void {
       stop(at, true);
       // Ending early normally just goes back. While testing it must not throw
       // away the log — that is exactly when the log is worth reading.
-      if (OPTIONS.showDiagnostics) renderDone(false);
+      if (showDiagnostics) renderDone(false);
       else renderShell(null);
     },
   });
@@ -196,6 +266,14 @@ function run(session: Session, resumed: boolean): void {
     // Back from a suspension: recompute from the wall clock rather than
     // resuming wherever the frames left off.
     engine?.resume();
+
+    // The audio clock stops while the context is suspended, which would push
+    // every pending bell late by the length of the suspension. Re-lay them.
+    const drift = engine?.resync(session.remainingBells(at), at) ?? 0;
+    if (Math.abs(drift) > 0.25) {
+      log.add(at, `audio clock drifted ${drift.toFixed(1)}s, bells re-laid`);
+    }
+
     cancelAnimationFrame(frame);
     tick();
   }
@@ -253,7 +331,7 @@ function renderDone(completed: boolean): void {
     start();
   });
 
-  if (OPTIONS.showDiagnostics && lastDiagnostics !== null) {
+  if (showDiagnostics && lastDiagnostics !== null) {
     done.append(diagnosticsPanel(lastDiagnostics));
   }
 
@@ -306,8 +384,13 @@ function describe(config: SessionConfig): string {
   return `${capitalise(minutes(config.durationMs))}. ${interval}`;
 }
 
+/** Whole minutes where it divides, seconds where it does not. */
 function minutes(ms: number): string {
-  const value = Math.round((ms / 60_000) * 100) / 100;
+  if (ms < 60_000 || ms % 60_000 !== 0) {
+    const seconds = Math.round(ms / 1000);
+    return `${String(seconds)} ${seconds === 1 ? 'second' : 'seconds'}`;
+  }
+  const value = ms / 60_000;
   return `${String(value)} ${value === 1 ? 'minute' : 'minutes'}`;
 }
 

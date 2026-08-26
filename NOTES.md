@@ -105,6 +105,14 @@ again, look at the environment rule before looking at the workflow.
 Phase 1 is verified on a phone by someone working from the Android app, with no
 local checkout. Two stopgaps follow from that, and **both come out in phase 2**:
 
+- Session-length buttons on the start screen, gated by `scaffoldingEnabled()`
+  in `src/main.ts`. The first device test was run from a URL carrying the
+  session settings, and the report — three opening gongs then silence, still
+  running well past its own end — is what a *lost query string* looks like: the
+  app falls back to the default ten minutes and behaves perfectly, which reads
+  as a broken timer. Buttons cannot be stripped in transit. Flipping
+  `scaffoldingEnabled()` to false restores the one-button screen the spec
+  describes.
 - `src/timer/test-options.ts` — session settings from the URL query string:
   `?minutes=20&interval=5&prepare=10&leadout=12`, `interval=off`, `diag=1`.
   Bounded and validated; nonsense falls back to the defaults. Absent a query
@@ -117,6 +125,28 @@ local checkout. Two stopgaps follow from that, and **both come out in phase 2**:
   is supported at all. Without it a failed bell reports as "it did not ring",
   which does not say whether the audio context was suspended, the wake lock was
   dropped, or the model never marked the bell.
+
+**A flaw the first device test made me find**
+
+The audio clock is not the wall clock. SPEC.md section 5 says to schedule every
+bell in advance against `ctx.currentTime`, and that is right — but a suspended
+AudioContext stops advancing its own clock, so every bell still pending drifts
+late by exactly the length of the suspension. On a locked phone that is the
+whole session. It is the same failure the session model exists to prevent, one
+layer down, and the spec does not mention it.
+
+`AudioEngine.resync(bells, elapsedMs)` now re-anchors the pending bells to the
+wall clock whenever the page becomes visible, and reports the drift it found so
+the log shows it. Each ringing gets its own gain node, so cancelling one that
+has not started is a single disconnect; a bell already sounding is left to
+finish. Tested against the fake context: a five-minute suspension that advanced
+the audio clock by two seconds reports -298s and re-lays the closing bell where
+the wall clock says it belongs.
+
+This does not remove the need to keep the context alive — a bell can only be
+re-laid once the page is visible again, and on a locked phone that is too late.
+It is a second line of defence, and the log will now say whether the first one
+held.
 
 **Verified here**
 

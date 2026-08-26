@@ -29,14 +29,30 @@ export interface AudioEngine {
   readonly state: string;
   /**
    * Schedule every bell at or after `elapsedMs`, measured from the session's
-   * start. Called once. Bells are never scheduled one at a time as the session
-   * runs: the whole point is that the schedule outlives a suspended main thread.
+   * start. Bells are laid down all at once rather than one at a time as the
+   * session runs: the schedule has to outlive a suspended main thread.
    */
   scheduleFrom(bells: readonly ScheduledBell[], elapsedMs: number): void;
+  /**
+   * Re-lay the bells still ahead against the wall clock, and report how far the
+   * audio clock has drifted, in seconds. Negative means the audio clock fell
+   * behind — every pending bell was going to fire that much late.
+   */
+  resync(bells: readonly ScheduledBell[], elapsedMs: number): number;
   /** Nudge a context the OS suspended. Safe to call on every visibilitychange. */
   resume(): void;
   /** Stop the keepalive and let the context go. */
   close(): void;
+}
+
+/**
+ * One ringing of a bell, kept so it can be called off if the audio clock turns
+ * out to have drifted. Everything for the bell hangs off its own gain node, so
+ * cancelling is one disconnect rather than chasing down each oscillator.
+ */
+interface PlacedBell {
+  readonly when: number;
+  readonly gain: GainNode;
 }
 
 /** Null when the browser has no Web Audio at all; the session still runs, silently. */
@@ -53,6 +69,25 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
   announce(options.nowPlaying);
 
   let closed = false;
+  let placed: PlacedBell[] = [];
+  /** Where session t = 0 sits on the audio clock, as last laid down. */
+  let origin: number | null = null;
+
+  const place = (bells: readonly ScheduledBell[], elapsedMs: number): void => {
+    const volume = options.volume ?? 1;
+    // Offsets are relative to the session start; anchor them to the audio clock.
+    origin = ctx.currentTime - elapsedMs / 1000;
+    for (const bell of bells) {
+      const when = origin + bell.offsetMs / 1000;
+      // A bell whose moment has passed is not rung late: never a backlog.
+      if (when < ctx.currentTime - RESYNC_TOLERANCE_MS / 1000) continue;
+      const at = Math.max(when, ctx.currentTime);
+      const gain = ctx.createGain();
+      gain.connect(master);
+      scheduleBell(ctx, at, bell.kind, { destination: gain, volume });
+      placed.push({ when: at, gain });
+    }
+  };
 
   return {
     get state(): string {
@@ -61,18 +96,26 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
 
     scheduleFrom(bells: readonly ScheduledBell[], elapsedMs: number): void {
       if (closed) return;
-      const volume = options.volume ?? 1;
-      // Offsets are relative to the session start; the audio clock starts now.
-      const origin = ctx.currentTime - elapsedMs / 1000;
-      for (const bell of bells) {
-        const when = origin + bell.offsetMs / 1000;
-        // A bell whose moment has passed is not rung late: never a backlog.
-        if (when < ctx.currentTime - RESYNC_TOLERANCE_MS / 1000) continue;
-        scheduleBell(ctx, Math.max(when, ctx.currentTime), bell.kind, {
-          destination: master,
-          volume,
-        });
+      place(bells, elapsedMs);
+    },
+
+    resync(bells: readonly ScheduledBell[], elapsedMs: number): number {
+      if (closed) return 0;
+
+      const anchor = ctx.currentTime - elapsedMs / 1000;
+      const drift = origin === null ? 0 : anchor - origin;
+
+      // Silence everything not yet sounding and lay it down again against the
+      // wall clock. A bell already ringing is left alone to finish.
+      const ringing: PlacedBell[] = [];
+      for (const bell of placed) {
+        if (bell.when > ctx.currentTime) bell.gain.disconnect();
+        else ringing.push(bell);
       }
+      placed = ringing;
+
+      place(bells, elapsedMs);
+      return drift;
     },
 
     resume(): void {
