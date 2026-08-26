@@ -1,0 +1,45 @@
+/*
+ * Palette and scale from SPEC.md section 9.
+ *
+ * The register is a palm-leaf manuscript: tan-olive ground, near-black
+ * characters, one bronze accent taken from the bell's own material. Dark by
+ * default, because the Sitting screen is looked at in a dim room.
+ */
+:root {
+  color-scheme: dark;
+
+  --ink: #121511;
+  --leaf: #d8cfba;
+  --soot: #3a3d36;
+  --bronze: #8e7b4a;
+  --dusk: #1e231d;
+
+  /* Weights of --leaf against --ink. Shades of the palette, not new hues. */
+  --text: var(--leaf);
+  --text-quiet: color-mix(in srgb, var(--leaf) 58%, var(--ink));
+  --text-faint: color-mix(in srgb, var(--leaf) 32%, var(--ink));
+  --hairline: color-mix(in srgb, var(--leaf) 15%, var(--ink));
+
+  /*
+   * UI chrome only. Canonical text is set in Gentium Plus, which arrives with
+   * the corpus — there is no canonical text on any screen yet (SPEC.md 9).
+   */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', roboto, sans-serif;
+
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.75rem;
+
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --space-5: 4rem;
+
+  /* Cross-fades measured in whole seconds: the pacing of a breath. */
+  --fade: 1200ms;
+  --fade-slow: 2400ms;
+
+  --tap: 44px;
+}
