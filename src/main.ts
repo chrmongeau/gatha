@@ -145,7 +145,10 @@ function run(session: Session, resumed: boolean): void {
       const at = session.read().elapsedMs;
       log.add(at, 'ended early');
       stop(at, true);
-      renderShell(null);
+      // Ending early normally just goes back. While testing it must not throw
+      // away the log — that is exactly when the log is worth reading.
+      if (OPTIONS.showDiagnostics) renderDone(false);
+      else renderShell(null);
     },
   });
 
@@ -177,7 +180,7 @@ function run(session: Session, resumed: boolean): void {
     if (reading.finished) {
       log.add(reading.elapsedMs, `finished, audio ${audioState(engine)}`);
       stop(reading.elapsedMs, false);
-      renderDone();
+      renderDone(true);
       return;
     }
     frame = requestAnimationFrame(tick);
@@ -231,15 +234,19 @@ function closeAudio(
   }, tailMs);
 }
 
-function renderDone(): void {
+function renderDone(completed: boolean): void {
   const done = document.createElement('section');
   done.className = 'shell';
   done.innerHTML = `
-    <p class="shell__note">The sit is complete.</p>
+    <p class="shell__note"></p>
     <div class="shell__actions">
       <button type="button" class="shell__quiet">Back</button>
     </div>
   `;
+
+  query(done, '.shell__note', HTMLElement).textContent = completed
+    ? 'The sit is complete.'
+    : 'The sit was ended.';
 
   const back = query(done, 'button', HTMLButtonElement);
   back.addEventListener('click', () => {
