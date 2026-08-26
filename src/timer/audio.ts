@@ -25,6 +25,8 @@ export interface AudioEngineOptions {
 }
 
 export interface AudioEngine {
+  /** The context's state, for the diagnostic log. 'closed' once shut down. */
+  readonly state: string;
   /**
    * Schedule every bell at or after `elapsedMs`, measured from the session's
    * start. Called once. Bells are never scheduled one at a time as the session
@@ -53,6 +55,10 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
   let closed = false;
 
   return {
+    get state(): string {
+      return closed ? 'closed' : ctx.state;
+    },
+
     scheduleFrom(bells: readonly ScheduledBell[], elapsedMs: number): void {
       if (closed) return;
       const volume = options.volume ?? 1;

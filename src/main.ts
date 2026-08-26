@@ -13,6 +13,8 @@ import {
   saveActiveSession,
 } from './timer/active-session';
 import { Session, endsAt, type SessionConfig, type SessionRecord } from './timer/session';
+import { Diagnostics } from './timer/diagnostics';
+import { readTestOptions } from './timer/test-options';
 import { createScreenWakeLock } from './timer/wakelock';
 import { createSittingView } from './views/sitting';
 import { query } from './views/dom';
@@ -21,7 +23,7 @@ import { query } from './views/dom';
  * Phase 1 is the timer alone (SPEC.md section 14). Duration and interval are
  * hardcoded here; the Today screen that will set them arrives with the corpus.
  */
-const CONFIG: SessionConfig = {
+const DEFAULT_CONFIG: SessionConfig = {
   durationMs: 10 * 60_000,
   intervalMs: 5 * 60_000,
   prepareMs: 10_000,
@@ -29,8 +31,15 @@ const CONFIG: SessionConfig = {
   leadOutMs: 12_000,
 };
 
+// Device testing only, until the Today screen lands. See timer/test-options.ts.
+const OPTIONS = readTestOptions(window.location.search, DEFAULT_CONFIG);
+const CONFIG = OPTIONS.config;
+
 const app = query(document, '#app', HTMLElement);
 const storage = defaultStorage();
+
+/** The log of the session just finished, kept so the done screen can show it. */
+let lastDiagnostics: Diagnostics | null = null;
 
 start();
 
@@ -56,7 +65,7 @@ function renderShell(resumable: SessionRecord | null): void {
   shell.className = 'shell';
   shell.innerHTML = `
     <h1 class="shell__title">gatha</h1>
-    <p class="shell__note">Ten minutes. A bell at the start, at five, and at the end.</p>
+    <p class="shell__note"></p>
     <div class="shell__actions">
       <button type="button" class="shell__begin">Begin</button>
     </div>
@@ -64,15 +73,17 @@ function renderShell(resumable: SessionRecord | null): void {
 
   const actions = query(shell, '.shell__actions', HTMLElement);
   const begin = query(shell, '.shell__begin', HTMLButtonElement);
+  const note = query(shell, '.shell__note', HTMLElement);
+  note.textContent = describe(CONFIG);
 
   if (resumable === null) {
     begin.addEventListener('click', () => {
-      run(Session.start(CONFIG, systemClock));
+      run(Session.start(CONFIG, systemClock), false);
     });
   } else {
     begin.textContent = 'Resume';
     begin.addEventListener('click', () => {
-      run(Session.resume(resumable, systemClock));
+      run(Session.resume(resumable, systemClock), true);
     });
 
     const discard = document.createElement('button');
@@ -81,11 +92,11 @@ function renderShell(resumable: SessionRecord | null): void {
     discard.textContent = 'Start again';
     discard.addEventListener('click', () => {
       if (storage !== null) clearActiveSession(storage);
-      run(Session.start(CONFIG, systemClock));
+      run(Session.start(CONFIG, systemClock), false);
     });
     actions.append(discard);
 
-    query(shell, '.shell__note', HTMLElement).textContent = 'A sit is already in progress.';
+    note.textContent = 'A sit is already in progress.';
   }
 
   show(shell, begin);
@@ -99,7 +110,7 @@ function renderShell(resumable: SessionRecord | null): void {
  * loop only ever reads the clock — no ticks are counted, and a frozen main
  * thread costs nothing but the frames it did not draw.
  */
-function run(session: Session): void {
+function run(session: Session, resumed: boolean): void {
   const config = session.record.config;
   if (storage !== null) saveActiveSession(session.record, storage);
 
@@ -107,15 +118,33 @@ function run(session: Session): void {
   const engine = createAudioEngine({
     nowPlaying: { title: 'Sitting', artist: 'Gatha' },
   });
-  engine?.scheduleFrom(session.remainingBells(first.elapsedMs), first.elapsedMs);
-
   const wakeLock = createScreenWakeLock();
-  void wakeLock.acquire();
+
+  const log = new Diagnostics({
+    startedAt: session.record.startedAt,
+    durationMs: config.durationMs,
+    intervalMs: config.intervalMs,
+    wakeLockSupported: wakeLock.supported,
+    audioSupported: engine !== null,
+    userAgent: navigator.userAgent,
+  });
+  lastDiagnostics = log;
+  log.add(first.elapsedMs, resumed ? 'session resumed' : 'session started');
+
+  const scheduled = session.remainingBells(first.elapsedMs);
+  engine?.scheduleFrom(scheduled, first.elapsedMs);
+  log.add(first.elapsedMs, `${String(scheduled.length)} bells scheduled, audio ${audioState(engine)}`);
+
+  void wakeLock.acquire().then(() => {
+    log.add(session.read().elapsedMs, `wake lock ${wakeLock.held ? 'held' : 'NOT held'}`);
+  });
 
   const view = createSittingView({
     config,
     onEnd: () => {
-      stop(session.read().elapsedMs, true);
+      const at = session.read().elapsedMs;
+      log.add(at, 'ended early');
+      stop(at, true);
       renderShell(null);
     },
   });
@@ -138,7 +167,15 @@ function run(session: Session): void {
     if (!running) return;
     const reading = session.read();
     view.update(reading);
+
+    for (const bell of reading.due) log.add(reading.elapsedMs, `bell ${bell.kind} due`);
+    for (const bell of reading.skipped) {
+      const late = (reading.elapsedMs - bell.offsetMs) / 1000;
+      log.add(reading.elapsedMs, `bell ${bell.kind} SKIPPED, ${late.toFixed(1)}s late`);
+    }
+
     if (reading.finished) {
+      log.add(reading.elapsedMs, `finished, audio ${audioState(engine)}`);
       stop(reading.elapsedMs, false);
       renderDone();
       return;
@@ -147,7 +184,12 @@ function run(session: Session): void {
   };
 
   function onVisibilityChange(): void {
-    if (document.visibilityState !== 'visible') return;
+    const at = session.read().elapsedMs;
+    if (document.visibilityState !== 'visible') {
+      log.add(at, `hidden, audio ${audioState(engine)}, lock ${wakeLock.held ? 'held' : 'released'}`);
+      return;
+    }
+    log.add(at, `visible, audio ${audioState(engine)}, lock ${wakeLock.held ? 'held' : 'released'}`);
     // Back from a suspension: recompute from the wall clock rather than
     // resuming wherever the frames left off.
     engine?.resume();
@@ -204,7 +246,66 @@ function renderDone(): void {
     start();
   });
 
+  if (OPTIONS.showDiagnostics && lastDiagnostics !== null) {
+    done.append(diagnosticsPanel(lastDiagnostics));
+  }
+
   show(done, back);
+}
+
+/** Testing scaffolding: the session's log, on screen, copyable. */
+function diagnosticsPanel(log: Diagnostics): HTMLElement {
+  const panel = document.createElement('div');
+  panel.className = 'diagnostics';
+  panel.innerHTML = `
+    <button type="button" class="shell__quiet diagnostics__copy">Copy log</button>
+    <pre class="diagnostics__text"></pre>
+  `;
+
+  const text = log.toText();
+  query(panel, '.diagnostics__text', HTMLElement).textContent = text;
+
+  const copy = query(panel, '.diagnostics__copy', HTMLButtonElement);
+  copy.addEventListener('click', () => {
+    // The Clipboard API is typed as always present but is absent outside a
+    // secure context, where reaching for it throws rather than returning null.
+    try {
+      void navigator.clipboard.writeText(text).then(
+        () => {
+          copy.textContent = 'Copied';
+        },
+        () => {
+          copy.textContent = 'Select the text below';
+        },
+      );
+    } catch {
+      copy.textContent = 'Select the text below';
+    }
+  });
+
+  return panel;
+}
+
+function audioState(engine: ReturnType<typeof createAudioEngine>): string {
+  return engine === null ? 'unsupported' : engine.state;
+}
+
+/** Plain words for whatever session the URL asked for. */
+function describe(config: SessionConfig): string {
+  const interval =
+    config.intervalMs === null
+      ? 'A bell at the start and at the end.'
+      : `A bell at the start, every ${minutes(config.intervalMs)}, and at the end.`;
+  return `${capitalise(minutes(config.durationMs))}. ${interval}`;
+}
+
+function minutes(ms: number): string {
+  const value = Math.round((ms / 60_000) * 100) / 100;
+  return `${String(value)} ${value === 1 ? 'minute' : 'minutes'}`;
+}
+
+function capitalise(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /**

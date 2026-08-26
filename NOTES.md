@@ -100,6 +100,24 @@ what an environment branch-policy rejection looks like. Creating `main` fixed
 it; the next run deployed. If a deploy ever fails instantly with no step logs
 again, look at the environment rule before looking at the workflow.
 
+**Testing scaffolding, added because the tester cannot edit code**
+
+Phase 1 is verified on a phone by someone working from the Android app, with no
+local checkout. Two stopgaps follow from that, and **both come out in phase 2**:
+
+- `src/timer/test-options.ts` — session settings from the URL query string:
+  `?minutes=20&interval=5&prepare=10&leadout=12`, `interval=off`, `diag=1`.
+  Bounded and validated; nonsense falls back to the defaults. Absent a query
+  string the app is exactly what it was: ten minutes, a bell at five. Delete
+  this when the Today screen lands — that screen is where duration belongs.
+- `src/timer/diagnostics.ts` — a log of what the session actually did, shown on
+  the done screen with `?diag=1` and copyable. It records the bells marked due
+  and skipped with their lateness, every visibility change with the
+  AudioContext state and whether the wake lock was held, and whether either API
+  is supported at all. Without it a failed bell reports as "it did not ring",
+  which does not say whether the audio context was suspended, the wake lock was
+  dropped, or the model never marked the bell.
+
 **Verified here**
 
 `npm run typecheck`, `lint`, `test` (49 tests), `build` all pass, and the built
