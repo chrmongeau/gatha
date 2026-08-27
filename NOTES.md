@@ -599,3 +599,33 @@ served gzipped at 82KB against 279KB on disk, and first contentful paint is
 - Whether the imagery looks right, once there are photographs. Everything above
   is proven against two synthetic gradients, which is enough to trust the
   pipeline and says nothing about how a photograph sits under a passage.
+
+---
+
+## Imagery, dropped
+
+Decided after the fact, on the owner's prompting, and worth recording as a
+reversal rather than quietly deleting: the daily photograph is gone. The
+pipeline worked. It was removed because it did not earn its place, not because
+it failed.
+
+The argument, in full, is in SPEC.md §8, which now describes the absence. In
+short: precaching sixty to ninety photographs would multiply the offline
+footprint several times over for decoration, and section 1 makes offline a
+feature; a stock photograph competes with the typographic identity section 9
+builds; and curating a rotation is work only the owner can do, forever.
+
+Removed rather than left dormant. A pipeline with no inputs is exactly the
+half-built thing CLAUDE.md warns about — it would have rotted, and phase 5 would
+have had to keep reasoning about whether to precache it. `git log
+--diff-filter=D -- tools/build-imagery.mts` finds it if it is ever wanted.
+
+Gone: `tools/build-imagery.mts`, `src/imagery.ts` and its tests, `assets/imagery/`,
+`public/imagery/`, the `today__image` markup and CSS, the `imagery` npm script,
+and `sharp` from devDependencies — which leaves the project with no native build
+dependency at all. Section 8, and the mentions in §6, §10, §12, §13 and §14, now
+describe an app without photographs.
+
+Note that this supersedes the phase 4 entry above: "whether the imagery looks
+right, once there are photographs" is no longer outstanding, because there will
+not be photographs.

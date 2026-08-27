@@ -1,5 +1,4 @@
 import type { Passage } from '../corpus/load';
-import { imageryUrl, sourceSet, type DayImage } from '../imagery';
 import type { SessionConfig } from '../timer/session';
 import {
   DURATION_PRESETS_MS,
@@ -13,7 +12,7 @@ import { query } from './dom';
  * The day's passage, its source, and one action: Begin.
  *
  * Duration and interval are adjustable here, inline, without leaving the screen
- * (SPEC.md §4). The day's image belongs here too and arrives in phase 4.
+ * (SPEC.md §4).
  */
 export interface TodayView {
   readonly element: HTMLElement;
@@ -24,8 +23,6 @@ export interface TodayView {
 
 export interface TodayViewOptions {
   readonly passage: Passage;
-  /** Null until photographs are added; the screen reads fine without one. */
-  readonly image: DayImage | null;
   readonly config: SessionConfig;
   /** False while today is still open, which is when the floor is worth stating. */
   readonly satToday: boolean;
@@ -48,7 +45,6 @@ const MARKUP = `
       screen reader cannot navigate, so the heading is present and unseen.
     -->
     <h1 class="visually-hidden">Today’s passage</h1>
-    <div class="today__image" data-role="image" hidden></div>
     <div class="today__passage">
       <p class="passage" lang="en"></p>
       <p class="passage__source"></p>
@@ -79,9 +75,6 @@ export function createTodayView(options: TodayViewOptions): TodayView {
   const element = document.createElement('section');
   element.className = 'screen screen--today';
   element.innerHTML = MARKUP;
-
-  const figure = query(element, '[data-role="image"]', HTMLElement);
-  if (options.image !== null) paintImage(figure, options.image);
 
   const block = query(element, '.today__passage', HTMLElement);
   const passage = query(element, '.passage', HTMLElement);
@@ -193,50 +186,6 @@ export function createTodayView(options: TodayViewOptions): TodayView {
       element.remove();
     },
   };
-}
-
-/**
- * The day's image, with its space reserved before it arrives.
- *
- * `aspect-ratio` from the manifest and the 4×4 average underneath mean the
- * layout never shifts and nothing pops in (SPEC.md §8, §12). AVIF first, WebP
- * for anything that cannot read it.
- */
-function paintImage(into: HTMLElement, image: DayImage): void {
-  into.hidden = false;
-  into.style.setProperty('--aspect', String(image.aspect));
-  into.style.setProperty('--placeholder', `url("${image.placeholder}")`);
-
-  const picture = document.createElement('picture');
-  for (const format of ['avif', 'webp'] as const) {
-    const source = document.createElement('source');
-    source.type = `image/${format}`;
-    source.srcset = sourceSet(image, format);
-    source.sizes = '(min-width: 36rem) 34rem, 100vw';
-    picture.append(source);
-  }
-
-  const img = document.createElement('img');
-  img.className = 'today__photo';
-  const widest = Math.max(...image.widths);
-  img.src = imageryUrl(`${image.id}-${String(widest)}.webp`);
-  // Decorative: the passage is the content, and describing a photograph of
-  // water to a screen reader adds nothing it wants.
-  img.alt = '';
-  img.loading = 'eager';
-  img.decoding = 'async';
-  img.addEventListener('load', () => {
-    into.dataset.loaded = 'true';
-  });
-  picture.append(img);
-  into.append(picture);
-
-  if (image.credit !== null) {
-    const credit = document.createElement('p');
-    credit.className = 'today__credit';
-    credit.textContent = image.credit.photographer;
-    into.append(credit);
-  }
 }
 
 /**

@@ -190,8 +190,8 @@ one shown on open.
 
 Four views, no router library — a small state machine is enough.
 
-**Today.** The day's image, the passage, its source reference (e.g. "Udāna 1.3"),
-and a single primary action: **Begin**. Duration and interval are adjustable
+**Today.** The passage, its source reference (e.g. "Udāna 1.3"), and a single
+primary action: **Begin**. Duration and interval are adjustable
 here, inline, without leaving the screen. This is the screen people see most, so
 it should be the most finished.
 
@@ -434,7 +434,7 @@ feature in the entire history system and costs about twenty lines.
 
 Returning after a gap must be the most ordinary thing in the app. The Today
 screen after ten days away looks exactly like the Today screen after one: the
-day's image, the day's passage, and Begin.
+day's passage, and Begin.
 
 
 ### 7.3 The Method page
@@ -538,27 +538,29 @@ sold on it. Around 500–700 words plus references — long enough to be real,
 short enough to finish.
 ---
 
-## 8. Imagery
+## 8. Imagery — dropped
 
-One image per day, calm and unpeopled — water, stone, mist, foliage, horizon.
+**The app carries no photographs.** This section previously specified one image
+per day, hand-picked under the Unsplash License, processed at build time into
+AVIF and WebP. That was built, proved out against test images, and then removed
+deliberately. It is recorded here so it is not reintroduced as an oversight.
 
-**Curate at build time. Do not fetch at runtime.** Unsplash Source
-(`source.unsplash.com`) has been fully sunset — deprecated in 2021 and switched
-off entirely in 2024 — and the full Unsplash API requires a key, which cannot be
-kept secret in a client-side app, and imposes rate limits and attribution
-requirements that a static offline app cannot satisfy cleanly.
+Three reasons it does not earn its place:
 
-Instead: hand-pick 60–90 images under the Unsplash License, commit them to
-`assets/imagery/`, and process them at build time into AVIF with WebP fallback,
-at two widths, targeting under 150KB each. Rotate by `dayNumber` using the same
-mechanism as the passage. Store photographer credit in a manifest and show it
-small on the Today screen.
+- **Offline cost.** Section 1 makes working fully offline a feature. Sixty to
+  ninety photographs is six to nine megabytes to precache — several times the
+  rest of the app — spent on decoration. Not precaching them instead makes the
+  daily image the one thing that breaks without a network.
+- **It competes with section 9.** The identity here is typographic: the passage
+  set large in a lot of space, the incised line, the notches. A photograph of
+  mist over water is what every other meditation app looks like, and the
+  restraint is the distinctiveness.
+- **Curation never finishes.** The rotation is only ever as good as its worst
+  photograph, and only the owner can judge that, indefinitely.
 
-This is offline-capable, key-free, rate-limit-free, and gives a consistent
-visual register — which a random API never would.
-
-Generate a BlurHash or a 4×4 pixel average per image at build time and use it as
-the placeholder so nothing pops in.
+The pipeline is in the history if it is ever wanted again — `git log --diff-filter=D
+-- tools/build-imagery.mts` finds it. Reintroducing it should be a decision with
+an answer to the offline cost, not a revival.
 
 ---
 
@@ -647,8 +649,7 @@ removing transitions entirely, not by shortening them.
 
 ## 10. PWA and offline
 
-- Precache the shell, fonts, `passages.json`, `order.json`, and the current
-  week's images.
+- Precache the shell, fonts, `passages.json`, and `order.json`.
 - Cache sutta full texts on demand, `stale-while-revalidate`.
 - The app must be **fully functional offline after first load**, including
   starting a session and recording it. Someone sitting at 6am on airplane mode
@@ -706,7 +707,7 @@ Build to this without announcing it in the UI.
 - Tap targets ≥ 44px.
 - The Sitting screen should be quiet for screen readers — announce the start and
   the end, not the progress.
-- No layout shift on load; reserve image space.
+- No layout shift on load; reserve space for anything that arrives late.
 - Lighthouse: 100 on Accessibility and Best Practices, ≥95 on Performance.
 
 ---
@@ -717,12 +718,9 @@ Build to this without announcing it in the UI.
 gatha/
 ├── .github/workflows/deploy.yml
 ├── tools/
-│   ├── build-corpus.mts        # bilara-data → public/corpus
-│   └── build-imagery.mts       # source images → AVIF/WebP + manifest
-├── assets/imagery/             # committed source images
+│   └── build-corpus.mts        # bilara-data → public/corpus
 ├── public/
 │   ├── corpus/
-│   ├── imagery/
 │   └── manifest.webmanifest
 ├── src/
 │   ├── main.ts
@@ -761,7 +759,7 @@ Ship each phase in a working state before starting the next.
    everything else is decoration on top of this.
 2. **Corpus.** Extraction script, daily selection, Today and Discourse screens.
 3. **History.** Session log, practice view, export/import.
-4. **Imagery and design pass.** Full type and palette system, motion, polish.
+4. **Design pass.** Full type and palette system, motion, polish.
 5. **PWA.** Manifest, service worker, offline, install.
 6. **TTS.** Phase A, then optionally Phase B.
 
