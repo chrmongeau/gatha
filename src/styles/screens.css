@@ -570,3 +570,47 @@
   display: block;
   color: var(--text-faint);
 }
+
+/* ----------------------------------------------------------------- imagery */
+
+/*
+ * The day's image. Its space is reserved from the aspect ratio in the manifest
+ * and the 4×4 average is held underneath, so the layout never shifts and
+ * nothing pops in (SPEC.md §8, §12).
+ */
+.today__image {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border-radius: 2px;
+  aspect-ratio: var(--aspect, 1.5);
+  background-image: var(--placeholder);
+  background-position: center;
+  background-size: cover;
+}
+
+.today__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--fade-slow) ease;
+}
+
+.today__image[data-loaded='true'] .today__photo {
+  opacity: 1;
+}
+
+/* Small and quiet, as section 8 asks. */
+.today__credit {
+  position: absolute;
+  right: var(--space-1);
+  bottom: var(--space-1);
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin: 0;
+  background: color-mix(in srgb, var(--ground) 70%, transparent);
+  color: var(--text-faint);
+  font-size: var(--step--1);
+}

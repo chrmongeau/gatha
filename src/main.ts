@@ -7,6 +7,7 @@ import './styles/sitting.css';
 import { passageForDay, rerollFrom } from './corpus/daily';
 import { loadCorpus, loadDiscourse, type Corpus, type Passage } from './corpus/load';
 import { Views, type Screen } from './state';
+import { imageForDay, loadImagery, type DayImage } from './imagery';
 import { applyTheme, loadPreference, savePreference, watchSystemTheme, type ThemePreference } from './theme';
 import { dayNumber } from './day';
 import { counts, hasSatOn } from './history/metrics';
@@ -46,6 +47,7 @@ let corpus: Corpus | null = null;
 let config: SessionConfig = loadPreferences(storage);
 /** The day's passage, or whatever a re-roll has landed on since. */
 let passageUid: string | null = null;
+let images: DayImage[] = [];
 let sessions: LoggedSession[] = loadSessions(storage);
 let anchor: string | null = loadAnchor(storage);
 let theme: ThemePreference = loadPreference(storage);
@@ -90,6 +92,8 @@ async function boot(): Promise<void> {
   }
   settled();
   passageUid = passageForDay(corpus.order, dayNumber(new Date()));
+  // Its own request, and its own failure: no photographs is a state, not an error.
+  images = await loadImagery();
   showToday();
 }
 
@@ -124,6 +128,7 @@ function showToday(): void {
   const resumable = findResumableSession();
   const view = createTodayView({
     passage,
+    image: imageForDay(images, dayNumber(new Date())),
     config,
     satToday: hasSatOn(sessions, dayNumber(new Date())),
     anchor,
