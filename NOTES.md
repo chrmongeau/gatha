@@ -261,18 +261,38 @@ Two things the run found:
   exactly what section 9 specifies and conveying nothing, which reads as a
   stopped app. The track is now its own token at 32%. The hairline, the absence
   of numbers, and the notches are unchanged: this is legibility, not a redesign.
-- *The opening and closing bells still do not sound clear.* Clipping was real
-  and is fixed, but only slightly improved the result, so something else is
-  going on. The remaining suspect is the fundamentals: 196 Hz and 174 Hz, where
-  the interval bell that sounds fine is 294 Hz. A phone speaker cannot reproduce
-  much below about 500 Hz and distorts when driven there. Headphones against
-  speaker will settle it.
+- *The opening and closing bells still do not sound clear.* Since resolved —
+  see below.
 
 `createBellPreview()` rings one bell on demand from the start screen, with no
 session and no keepalive in the graph. Tuning a bell through twenty-minute sits
 is not a workable loop. It also separates two explanations that otherwise look
 the same: wrong in preview is the synthesis or the speaker, right in preview and
 wrong in a session implicates the keepalive tone underneath it.
+
+**The bell is accepted**
+
+Judged good on a device through the preview buttons: all three bells, no
+clipping, no scratchiness. Clipping was the fault; the fundamentals were not.
+
+One loose end, recorded because it is easy to lose. The synthesis the bells were
+judged good in preview is byte-for-byte the synthesis that sounded unclear in
+the twenty-minute session two commits earlier, and the levels are identical —
+preview rings at volume 0.9 into the destination, a session rings at 1.0 through
+a master of 0.9. The one difference is that a session has the 30 Hz keepalive
+running underneath. That is weak evidence, since the two listens were minutes
+apart in different conditions, but it is the only concrete difference, and a
+phone speaker asked to move at 30 Hz can muddy everything above it. If a session
+ever sounds worse than the preview, duck the keepalive around each ringing: the
+bell is far above the silence threshold on its own, so nothing needs to run
+under it. Deliberately not built on a hypothesis.
+
+**The incised line, at the sitter's request**
+
+Line weight 1px to 2px, notches 1x9px to 2x14px, both behind tokens. SPEC.md
+section 9 says "hairline", and 2px is a departure from that word — made because
+the person sitting with it asked for it after using it, which is better evidence
+than the word.
 
 **Verified here**
 

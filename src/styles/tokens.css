@@ -27,6 +27,11 @@
    */
   --line-track: color-mix(in srgb, var(--leaf) 32%, var(--ink));
 
+  /* Weight of the incised line and of the notches cut into it. */
+  --line-weight: 2px;
+  --notch-weight: 2px;
+  --notch-height: 14px;
+
   /*
    * UI chrome only. Canonical text is set in Gentium Plus, which arrives with
    * the corpus — there is no canonical text on any screen yet (SPEC.md 9).
