@@ -3,9 +3,30 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="color-scheme" content="dark" />
+    
     <meta name="theme-color" content="#121511" />
     <title>Gatha</title>
+    <script>
+      /*
+       * Before first paint, or a light reader gets a dark flash on every load.
+       * Deliberately duplicates the rule in src/theme.ts: this has to run
+       * before any module does, and it is three lines. Keep the two in step.
+       */
+      try {
+        var pref = localStorage.getItem('gatha.theme');
+        var light =
+          pref === 'light' ||
+          (pref === 'system' && matchMedia('(prefers-color-scheme: light)').matches);
+        document.documentElement.dataset.theme = light ? 'light' : 'dark';
+        if (light) {
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', '#d8cfba');
+        }
+      } catch (error) {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
   </head>
   <body>
     <main id="app" class="app"></main>

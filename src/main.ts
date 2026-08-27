@@ -7,6 +7,7 @@ import './styles/sitting.css';
 import { passageForDay, rerollFrom } from './corpus/daily';
 import { loadCorpus, loadDiscourse, type Corpus, type Passage } from './corpus/load';
 import { Views, type Screen } from './state';
+import { applyTheme, loadPreference, savePreference, watchSystemTheme, type ThemePreference } from './theme';
 import { dayNumber } from './day';
 import { counts, hasSatOn } from './history/metrics';
 import {
@@ -47,6 +48,10 @@ let config: SessionConfig = loadPreferences(storage);
 let passageUid: string | null = null;
 let sessions: LoggedSession[] = loadSessions(storage);
 let anchor: string | null = loadAnchor(storage);
+let theme: ThemePreference = loadPreference(storage);
+
+applyTheme(theme);
+watchSystemTheme(() => theme);
 
 const ANCHOR_ASKED_KEY = 'gatha.anchorAsked';
 
@@ -225,6 +230,12 @@ function showPractice(): void {
           reportResult(view, 'That file could not be read.');
         },
       );
+    },
+    theme,
+    onThemeChange: (preference) => {
+      theme = preference;
+      savePreference(preference, storage);
+      applyTheme(preference);
     },
     onMethod: showMethod,
     onBack: showToday,

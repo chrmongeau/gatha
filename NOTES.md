@@ -488,3 +488,43 @@ no notifications, no goal-setting UI. A browser check asserts none of "streak",
 - Whether returning after a gap genuinely feels ordinary. That is the thing §7 is
   built around and the one thing a test cannot check.
 - Whether the Method page reads as showing the work rather than as marketing.
+
+
+---
+
+## A light theme
+
+Asked for after reading in daylight. Dark stays the default.
+
+SPEC.md §9 anticipated this more precisely than it looks: it defines `--soot` as
+"secondary text on light ground", a token the dark theme never uses, and it says
+the reading views may lift. The light theme is the palm-leaf manuscript the right
+way up — tan-olive ground, near-black characters incised into it — which is the
+grounding §9 sets out. No colour was invented for it.
+
+- Three preferences: dark, light, and system. Dark is what a fresh install gets
+  whatever the phone is set to, because the app's resting state is low-luminance;
+  `system` exists so `prefers-color-scheme` is genuinely respected (§12) for
+  anyone who wants it.
+- `system` is resolved to an explicit value before the stylesheet sees it, so
+  `tokens.css` needs no media query and no duplicated block.
+- An inline script in `index.html` sets the theme before first paint. Without it
+  a light reader gets a dark flash on every load. It deliberately duplicates
+  three lines of `src/theme.ts`; the comment says so.
+
+**A contrast failure that predated the request.** Working out the light ladder
+meant computing the dark one, which turned out to fail: `--text-faint` sat at
+**2.29:1** against ink — the source reference, the legends, the quiet actions,
+all small text needing 4.5:1. Every pair in both themes is now computed rather
+than eyeballed, and measured in the browser afterwards: dark 11.88 / 7.1 / 4.59,
+light 11.88 / 7.13 / 4.70. Bronze needed handling too — 4.45:1 on ink is fine for
+a border but thin for text, and only 2.67:1 on leaf, so `--accent-text` lifts it
+on dark and `--accent` deepens it on light.
+
+**Two bugs found by looking rather than by measuring.** The incised line's fill
+was painted `--leaf` directly, which on a light ground is the ground. And
+restructuring the tokens deleted the block holding `--line-weight`, so the line
+had zero height and was invisible in *both* themes — while the contrast probe
+happily reported correct colours for an element nobody could see. The line now
+has its own themed token, `--line-cut`: soot on leaf, which is what an incised
+line rubbed with soot actually is.

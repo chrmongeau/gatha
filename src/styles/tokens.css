@@ -1,50 +1,77 @@
 /*
- * Palette and scale from SPEC.md section 9.
+ * The palette is fixed; only which end of it is the ground changes.
  *
- * The register is a palm-leaf manuscript: tan-olive ground, near-black
- * characters, one bronze accent taken from the bell's own material. Dark by
- * default, because the Sitting screen is looked at in a dim room.
+ * SPEC.md §9 grounds the whole design in the palm-leaf manuscript: a tan-olive
+ * ground with near-black characters incised into it. Dark is the app's resting
+ * state and its default, because the Sitting screen is looked at in a dim room.
+ * Light is that manuscript the right way up — and it is what `--soot` was always
+ * for, since §9 defines it as "secondary text on light ground" and the dark
+ * theme never uses it.
+ *
+ * Every text pair below is at or above 4.5:1 against its own ground, computed
+ * rather than eyeballed.
  */
 :root {
-  color-scheme: dark;
-
   --ink: #121511;
   --leaf: #d8cfba;
   --soot: #3a3d36;
   --bronze: #8e7b4a;
   --dusk: #1e231d;
+}
 
-  /* Weights of --leaf against --ink. Shades of the palette, not new hues. */
+/* Dark, and the default when nothing has been chosen. */
+:root {
+  color-scheme: dark;
+
+  --ground: var(--ink);
+  --raised: var(--dusk);
+
   --text: var(--leaf);
-  --text-quiet: color-mix(in srgb, var(--leaf) 58%, var(--ink));
-  --text-faint: color-mix(in srgb, var(--leaf) 32%, var(--ink));
-  --hairline: color-mix(in srgb, var(--leaf) 15%, var(--ink));
+  --text-quiet: color-mix(in srgb, var(--leaf) 75%, var(--ink)); /* 7.1:1 */
+  --text-faint: color-mix(in srgb, var(--leaf) 57%, var(--ink)); /* 4.7:1 */
 
-  /*
-   * The incised line's unlit track. Deliberately stronger than --hairline: at
-   * 15% it was invisible on a phone, so waking the screen two minutes into a sit
-   * showed a black rectangle and no evidence the timer was running.
-   */
+  /* Bronze is legible enough on ink to carry link text with a little lift. */
+  --accent: var(--bronze);
+  --accent-text: color-mix(in srgb, var(--bronze) 95%, var(--leaf)); /* 4.7:1 */
+
+  --hairline: color-mix(in srgb, var(--leaf) 22%, var(--ink));
   --line-track: color-mix(in srgb, var(--leaf) 32%, var(--ink));
+  /* The part of the line already cut. Incised, so it reads against the ground. */
+  --line-cut: color-mix(in srgb, var(--leaf) 80%, var(--ink));
+}
 
-  /* Weight of the incised line and of the notches cut into it. */
+/*
+ * Light. Resolved to an explicit value before first paint, so `system` never
+ * reaches the stylesheet and this file needs no media query.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --ground: var(--leaf);
+  --raised: color-mix(in srgb, var(--leaf) 92%, var(--soot));
+
+  --text: var(--ink);
+  --text-quiet: var(--soot); /* 7.1:1 */
+  --text-faint: color-mix(in srgb, var(--soot) 82%, var(--leaf)); /* 4.7:1 */
+
+  /* Bronze on leaf is only 2.7:1, so on a light ground it is deepened. */
+  --accent: color-mix(in srgb, var(--bronze) 50%, var(--ink)); /* 5.9:1 */
+  --accent-text: var(--accent);
+
+  --hairline: color-mix(in srgb, var(--soot) 28%, var(--leaf));
+  --line-track: color-mix(in srgb, var(--soot) 45%, var(--leaf));
+  /*
+   * On leaf the cut line is soot — a stylus mark rubbed dark, which is what an
+   * incised line literally is. On ink it lightens instead.
+   */
+  --line-cut: var(--soot);
+}
+
+:root {
+  /* Weight of the incised line and of the notches cut into it. Not themed. */
   --line-weight: 2px;
   --notch-weight: 2px;
   --notch-height: 14px;
-
-  /*
-   * UI chrome only. Canonical text is set in Gentium Plus, which arrives with
-   * the corpus — there is no canonical text on any screen yet (SPEC.md 9).
-   */
-  --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', roboto, sans-serif;
-
-  /*
-   * Canonical text. Gentium Plus is a functional choice, not an aesthetic one:
-   * the translations are dense with Pali diacritics and most faces have no
-   * Latin Extended Additional coverage at all (SPEC.md §9).
-   */
-  --font-canon: 'Gentium Plus', charter, 'Bitstream Charter', 'Iowan Old Style',
-    'Source Serif Pro', georgia, serif;
 
   --step--1: 0.8125rem;
   --step-0: 1rem;

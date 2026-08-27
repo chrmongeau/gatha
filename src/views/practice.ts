@@ -7,6 +7,7 @@ import {
   type DaySummary,
 } from '../history/metrics';
 import type { SessionRecord } from '../history/store';
+import type { ThemePreference } from '../theme';
 import { query } from './dom';
 
 /**
@@ -31,6 +32,8 @@ export interface PracticeViewOptions {
   readonly onAnchorChange: (anchor: string | null) => void;
   readonly onExport: () => void;
   readonly onImport: (file: File) => void;
+  readonly theme: ThemePreference;
+  readonly onThemeChange: (preference: ThemePreference) => void;
   readonly onMethod: () => void;
   readonly onBack: () => void;
 }
@@ -67,6 +70,11 @@ const MARKUP = `
       <label class="choice__legend" for="anchor">I’ll sit after</label>
       <input class="practice__anchor" id="anchor" type="text" autocomplete="off"
              placeholder="my morning coffee" data-role="anchor" />
+    </section>
+
+    <section class="practice__block">
+      <h2 class="choice__legend">Appearance</h2>
+      <div class="choice__row" data-role="theme"></div>
     </section>
 
     <section class="practice__block">
@@ -109,6 +117,31 @@ export function createPracticeView(options: PracticeViewOptions): PracticeView {
 
   const squares = calendar(options.sessions, options.today, CALENDAR_DAYS);
   paintCalendar(query(element, '[data-role="calendar"]', HTMLElement), squares);
+
+  const themes = query(element, '[data-role="theme"]', HTMLElement);
+  const paintTheme = (chosen: ThemePreference): void => {
+    for (const button of themes.querySelectorAll('button')) {
+      button.setAttribute('aria-pressed', String(button.dataset.theme === chosen));
+    }
+  };
+  for (const [preference, label] of [
+    ['dark', 'Dark'],
+    ['light', 'Light'],
+    ['system', 'System'],
+  ] as const) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'choice__button';
+    button.dataset.theme = preference;
+    button.textContent = label;
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => {
+      paintTheme(preference);
+      options.onThemeChange(preference);
+    });
+    themes.append(button);
+  }
+  paintTheme(options.theme);
 
   const anchor = query(element, '[data-role="anchor"]', HTMLInputElement);
   anchor.value = options.anchor ?? '';

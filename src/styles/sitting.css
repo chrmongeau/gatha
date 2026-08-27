@@ -38,8 +38,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--leaf);
-  opacity: 0.72;
+  background: var(--line-cut);
   transform: scaleX(var(--progress, 0));
   transform-origin: left center;
 }
@@ -51,7 +50,7 @@
   left: calc(var(--at) * 100%);
   width: var(--notch-weight);
   height: var(--notch-height);
-  background: var(--bronze);
+  background: var(--accent);
   margin-top: calc(var(--notch-height) / -2);
   opacity: 0.85;
 }
