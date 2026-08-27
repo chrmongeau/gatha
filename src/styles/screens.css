@@ -165,11 +165,14 @@
 
 /*
  * An interval that will not fit inside the chosen duration. Faded rather than
- * marked, so unavailable reads differently from merely unchosen.
+ * marked, so unavailable reads differently from merely unchosen — but only far
+ * enough to read as unavailable. At 0.3 it fell to 1.7:1 on ink, which is not
+ * dimmed so much as gone; this holds about 3:1, against 7.1:1 for an option
+ * that is merely unchosen.
  */
 .choice__button:disabled {
   cursor: not-allowed;
-  opacity: 0.3;
+  opacity: 0.55;
 }
 
 .choice__row--even .choice__button {
