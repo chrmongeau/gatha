@@ -240,6 +240,40 @@ finish. `Session.elapsedMs` now reports the time without consuming anything, and
 `read()` is called from exactly two places. Worth remembering: a reader that
 mutates is a trap the second caller always falls into.
 
+**Device test 4 — the twenty-minute locked test passed**
+
+Chrome 151 on Android 10. Twenty minutes, screen locked after the opening bell,
+woken briefly three times. No freeze; heartbeats every 30.0s for the full
+duration; resync drift of 0.0s every time, including after sixteen unbroken
+minutes hidden. Every bell heard. **The timer requirement of phase 1 is met on
+Android.** It is not met on iOS, which has not been tested and suspends audio
+far more aggressively.
+
+The four `not marked live` lines at the end are correct: the animation frame was
+stopped, so the model noted those bells on return instead of replaying them,
+while the audio rang them from the schedule laid down at the start.
+
+Two things the run found:
+
+- *The Sitting screen was illegible.* Woken at 1:48 into the sit it showed a
+  32px lit segment at the far left and, for the rest of the width, a 1px line of
+  `--leaf` at 15% over `--ink` — invisible on a phone. The screen was doing
+  exactly what section 9 specifies and conveying nothing, which reads as a
+  stopped app. The track is now its own token at 32%. The hairline, the absence
+  of numbers, and the notches are unchanged: this is legibility, not a redesign.
+- *The opening and closing bells still do not sound clear.* Clipping was real
+  and is fixed, but only slightly improved the result, so something else is
+  going on. The remaining suspect is the fundamentals: 196 Hz and 174 Hz, where
+  the interval bell that sounds fine is 294 Hz. A phone speaker cannot reproduce
+  much below about 500 Hz and distorts when driven there. Headphones against
+  speaker will settle it.
+
+`createBellPreview()` rings one bell on demand from the start screen, with no
+session and no keepalive in the graph. Tuning a bell through twenty-minute sits
+is not a workable loop. It also separates two explanations that otherwise look
+the same: wrong in preview is the synthesis or the speaker, right in preview and
+wrong in a session implicates the keepalive tone underneath it.
+
 **Verified here**
 
 `npm run typecheck`, `lint`, `test` (49 tests), `build` all pass, and the built

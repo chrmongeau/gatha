@@ -1,5 +1,5 @@
 import { scheduleBell } from './bell';
-import { RESYNC_TOLERANCE_MS, type ScheduledBell } from './session';
+import { RESYNC_TOLERANCE_MS, type BellKind, type ScheduledBell } from './session';
 
 /**
  * The audio side of a session: one AudioContext, every bell laid down in
@@ -56,6 +56,29 @@ export interface AudioEngine {
 interface PlacedBell {
   readonly when: number;
   readonly gain: GainNode;
+}
+
+/**
+ * SCAFFOLDING. Ring a single bell on demand — no session, no keepalive, nothing
+ * else in the graph.
+ *
+ * Tuning a bell through twenty-minute sits is not a workable loop, and this also
+ * separates two explanations that otherwise look identical: a bell that sounds
+ * wrong here is the synthesis or the speaker, while a bell that sounds right
+ * here and wrong in a session implicates the keepalive tone running underneath
+ * it. Goes with the rest of the scaffolding in phase 2.
+ */
+export function createBellPreview(): ((kind: BellKind) => void) | null {
+  const Constructor = audioContextConstructor();
+  if (Constructor === null) return null;
+
+  let ctx: AudioContext | null = null;
+  return (kind: BellKind): void => {
+    // Created on the first tap, which is the gesture autoplay policy wants.
+    ctx ??= new Constructor();
+    void resumeContext(ctx);
+    scheduleBell(ctx, ctx.currentTime + 0.05, kind, { volume: 0.9 });
+  };
 }
 
 /** Null when the browser has no Web Audio at all; the session still runs, silently. */

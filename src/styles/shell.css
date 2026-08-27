@@ -118,3 +118,11 @@
   border-color: var(--bronze);
   color: var(--text);
 }
+
+.presets__row--bells {
+  margin-top: var(--space-1);
+}
+
+.presets__button:disabled {
+  opacity: 0.4;
+}

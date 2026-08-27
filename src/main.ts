@@ -3,7 +3,7 @@ import './styles/base.css';
 import './styles/shell.css';
 import './styles/sitting.css';
 
-import { createAudioEngine } from './timer/audio';
+import { createAudioEngine, createBellPreview } from './timer/audio';
 import { bellDurationSeconds } from './timer/bell';
 import { systemClock } from './timer/clock';
 import {
@@ -169,7 +169,32 @@ function presetPicker(note: HTMLElement): HTMLElement {
   }
 
   picker.append(row);
+  picker.append(bellPreview());
   return picker;
+}
+
+/**
+ * SCAFFOLDING. Ring each bell on demand, so the sound can be judged in seconds
+ * rather than through a twenty-minute sit.
+ */
+function bellPreview(): HTMLElement {
+  const preview = document.createElement('div');
+  preview.className = 'presets__row presets__row--bells';
+
+  const ring = createBellPreview();
+  for (const kind of ['opening', 'interval', 'closing'] as const) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'presets__button';
+    button.textContent = kind;
+    button.disabled = ring === null;
+    button.addEventListener('click', () => {
+      ring?.(kind);
+    });
+    preview.append(button);
+  }
+
+  return preview;
 }
 
 /**

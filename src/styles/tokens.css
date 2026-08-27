@@ -21,6 +21,13 @@
   --hairline: color-mix(in srgb, var(--leaf) 15%, var(--ink));
 
   /*
+   * The incised line's unlit track. Deliberately stronger than --hairline: at
+   * 15% it was invisible on a phone, so waking the screen two minutes into a sit
+   * showed a black rectangle and no evidence the timer was running.
+   */
+  --line-track: color-mix(in srgb, var(--leaf) 32%, var(--ink));
+
+  /*
    * UI chrome only. Canonical text is set in Gentium Plus, which arrives with
    * the corpus — there is no canonical text on any screen yet (SPEC.md 9).
    */
