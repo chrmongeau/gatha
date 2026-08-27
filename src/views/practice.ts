@@ -87,7 +87,8 @@ const MARKUP = `
         <button type="button" class="choice__button" data-role="export">Export</button>
         <label class="choice__button practice__import">
           Import
-          <input type="file" accept="application/json,.json" data-role="import" />
+          <input type="file" accept="application/json,.json" data-role="import"
+                 aria-label="Import a backup file" />
         </label>
       </div>
       <p class="practice__result" role="status" data-role="result"></p>

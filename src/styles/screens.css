@@ -284,6 +284,10 @@
 }
 
 .discourse__source {
+  /* A standalone link, so it gets a hand-sized target rather than a text-sized one. */
+  display: inline-flex;
+  min-height: var(--tap);
+  align-items: center;
   color: var(--accent-text);
   font-size: var(--step--1);
 }
@@ -546,6 +550,10 @@
 }
 
 .method__references a {
+  /* Inline in a citation, so it cannot be 44px tall without breaking the line,
+     but it can be given more than its own text height to aim at. */
+  display: inline-block;
+  padding-block: var(--space-1);
   color: var(--accent-text);
 }
 

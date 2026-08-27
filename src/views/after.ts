@@ -23,6 +23,7 @@ export interface AfterViewOptions {
 
 const MARKUP = `
   <article class="after">
+    <h1 class="visually-hidden">The sit is over</h1>
     <p class="after__recorded" data-role="recorded"></p>
     <div class="today__passage">
       <p class="passage" lang="en"></p>

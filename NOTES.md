@@ -528,3 +528,74 @@ had zero height and was invisible in *both* themes — while the contrast probe
 happily reported correct colours for an element nobody could see. The line now
 has its own themed token, `--line-cut`: soot on leaf, which is what an incised
 line rubbed with soot actually is.
+
+
+---
+
+## Phase 4 — Imagery pipeline and the design pass
+
+Photographs are deferred: every image host is blocked from the build environment
+— Unsplash, Wikimedia and Openverse all refuse — so sourcing was never something
+this end could do. The machinery is built and proven; the pictures wait for a
+desk. Adding them is a data operation, like adding a language.
+
+**Built**
+
+- `tools/build-imagery.mts` — AVIF with a WebP fallback at two widths, a 4×4
+  average as the placeholder, aspect ratio in the manifest. Reads
+  `assets/imagery/` and `credits.json`, writes `public/imagery/`.
+- `src/imagery.ts` — rotates by the same day number as the passage, so the
+  pairing is stable for the day and identical on every device.
+- The Today screen shows it with its space reserved. Measured cumulative layout
+  shift: **0.0000**.
+- `assets/imagery/README.md` — what belongs there and what the build enforces.
+- `sharp`, a devDependency. Section 8 requires build-time AVIF and the
+  environment has no encoder at all: no ImageMagick, ffmpeg, cwebp or avifenc.
+  It never enters the runtime bundle.
+
+**Proven, then removed**
+
+Two generated fixtures, run end to end: eight encoded files all decoding at the
+right dimensions, the browser choosing AVIF over WebP, aspect ratios preserved,
+placeholder and credit rendering, no layout shift. Then deleted, exactly as the
+second-language corpus run was in phase 2. The manifest ships empty and Today
+simply has no image.
+
+Two flaws the fixtures found, both mine:
+
+- The size guard printed `OVER 150KB` and shipped the file anyway. A warning
+  that stops nothing is not a guard. It now steps quality further down and, if a
+  file still cannot fit, names it and exits non-zero.
+- Removing every image left the previously generated files in `public/imagery/`.
+  The output directory is now cleared on every run, not only when there is
+  something to put in it.
+
+**The design pass, measured rather than asserted**
+
+Audited every screen at 320px and 390px:
+
+- *Today had no `h1` at all* — the screen people see most, with no heading for a
+  screen reader to navigate by. Section 9 spends its boldness on the passage and
+  wants no visible title, so the heading is present and unseen. After gained one
+  too.
+- The discourse's source link was a 15px-tall target. It is hand-sized now. The
+  DOI links are inline in citations, where a 44px target would break the line, so
+  they gained vertical padding instead.
+- The import control's file input carries its own label rather than relying on
+  the element that wraps it.
+- No overflow at 320px, no skipped heading levels, nothing unlabelled.
+
+Verified, having previously only claimed it: under `prefers-reduced-motion:
+reduce` the animation name computes to `none` and every duration to `0s` —
+removed entirely, not shortened, which is what section 9 asks for. Thirteen tab
+stops on Today, every one showing a focus ring.
+
+Performance was checked rather than assumed and needs nothing: the corpus is
+served gzipped at 82KB against 279KB on disk, and first contentful paint is
+100ms. Section 10 precaches it in phase 5, making that a one-time cost.
+
+**Needs human verification**
+
+- Whether the imagery looks right, once there are photographs. Everything above
+  is proven against two synthetic gradients, which is enough to trust the
+  pipeline and says nothing about how a photograph sits under a passage.

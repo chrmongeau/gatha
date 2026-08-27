@@ -42,6 +42,12 @@ export interface TodayViewOptions {
 
 const MARKUP = `
   <article class="today">
+    <!--
+      The screen carries no visible title by design — section 9 spends its
+      boldness on the passage. But a screen without a heading is a screen a
+      screen reader cannot navigate, so the heading is present and unseen.
+    -->
+    <h1 class="visually-hidden">Today’s passage</h1>
     <div class="today__image" data-role="image" hidden></div>
     <div class="today__passage">
       <p class="passage" lang="en"></p>
