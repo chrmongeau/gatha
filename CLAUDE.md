@@ -87,6 +87,13 @@ comes back clean — everything after it is decoration on a timer that has to wo
   It is what makes the above testable.
 - Commit per logical change with a plain-English subject. No emoji, no
   `feat(scope):` prefixes.
+- **Commits are authored by the repository owner, with Claude as co-author.**
+  Set `user.name` to `chrmongeau` and `user.email` to the owner's address, and
+  end the message with a `Co-Authored-By: Claude <noreply@anthropic.com>`
+  trailer. GitHub's contributor list should show the owner, not the assistant.
+- **Never put a session URL, a chat link, or a model name in a commit message**,
+  a PR, a code comment, or anything else that lands in the repository. They mean
+  nothing to a future reader and they do not belong in the history.
 
 ## Hard prohibitions
 

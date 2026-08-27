@@ -294,6 +294,20 @@ section 9 says "hairline", and 2px is a departure from that word — made becaus
 the person sitting with it asked for it after using it, which is better evidence
 than the word.
 
+**Spec amended, and a standing rule**
+
+SPEC.md section 5 now describes what the device tests established rather than
+what was assumed: that a frozen page takes the whole audio schedule with it,
+that the keepalive's *level* is the thing that prevents it and the threshold is
+about -72 dBFS, that a suspended AudioContext stops advancing its own clock, that
+the recovery must not hang on `visibilitychange` alone, and that elapsed time
+needs both a monotonic and a wall reading because `performance.now()` can stall
+while a device sleeps.
+
+The owner's standing rule, now recorded at the top of SPEC.md: where the spec
+turns out to be wrong, amend it to what works, say so, and note the evidence.
+Do not route around it and do not wait to be asked.
+
 **Verified here**
 
 `npm run typecheck`, `lint`, `test` (49 tests), `build` all pass, and the built

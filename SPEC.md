@@ -6,6 +6,11 @@ by offering the whole discourse it came from.
 This document is the source of truth for the build. Where it states a decision,
 follow it. Where it says **OPEN**, ask before choosing.
 
+Where a decision here turns out to be wrong in practice, amend it to describe
+what actually works, say so, and note the evidence. A spec that disagrees with a
+measured device is not a spec worth following. Section 5 has been amended this
+way already.
+
 ---
 
 ## 1. Product intent
@@ -227,8 +232,8 @@ every animation frame and again on every `visibilitychange`. State is a
 timestamp, never an accumulator.
 
 **Schedule every bell in advance, in the audio clock.** The Web Audio API has
-its own sample-accurate scheduler running off the main thread, and it keeps
-running when the page is backgrounded. At session start — inside the user
+its own sample-accurate scheduler running off the main thread, which survives
+the main thread being throttled or suspended. At session start — inside the user
 gesture handler, which is required by autoplay policy — create the `AudioContext`
 and schedule all bells at once:
 
@@ -242,12 +247,49 @@ for (const offsetSeconds of bellOffsets) {
 Do not schedule bells one at a time as the session progresses. The whole point
 is that the schedule survives the main thread being suspended.
 
-**Keep the audio context alive.** iOS suspends an `AudioContext` when the page
-is backgrounded unless audio is actively playing. Mitigate with a looping,
-near-silent buffer source running for the session duration, plus the
-`MediaSession` API so the OS treats the session as active media. Set
-`mediaSession.metadata` to the passage's source reference — it reads nicely on a
-lock screen.
+**But the schedule is not sufficient on its own, and the audio clock is not the
+wall clock.** Two failures were measured on a real device, and both must be
+handled:
+
+- *A frozen page takes the schedule with it.* Chrome froze a backgrounded tab
+  ninety seconds after the screen locked and held it frozen for eight minutes;
+  every bell scheduled inside it was lost. Nothing survives a freeze. Avoiding
+  the freeze is the keepalive's job, below.
+- *A suspended `AudioContext` stops advancing `currentTime`.* Bells scheduled
+  against it then fire late by the length of the suspension. So keep the offset
+  each bell was scheduled for, and when the page comes back, re-anchor the bells
+  still ahead to the wall clock. Give each ringing its own gain node so an
+  unstarted one can be cancelled with a single disconnect, and leave a bell
+  already sounding to finish.
+
+Do not hang that recovery on `visibilitychange` alone. A device test showed a
+page thawing after eight minutes without that event ever firing. Reach it from
+the `resume` (thaw) event and from a periodic timer as well.
+
+**Keep the audio context alive, and keep the tab audible.** iOS suspends an
+`AudioContext` when the page is backgrounded unless audio is actively playing,
+and Chrome freezes a hidden tab it considers silent. Both are answered by a
+continuous inaudible tone running for the session duration.
+
+**The level matters more than anything else here.** Chrome's audio power monitor
+puts its silence threshold near **-72 dBFS**, and a tab under that line counts as
+silent however much is nominally playing. A first attempt used near-silent noise
+at 0.0001 — -80 dBFS — which sat below the threshold, was frozen, and lost the
+session's bells. Use roughly **0.002, about -54 dBFS**, at a frequency low enough
+that no phone speaker can reproduce it (30 Hz works). Do not use noise: at an
+audible level it is heard as a continuous hiss, which was reported from a device
+as sounding "like an old analogue LP".
+
+Add the `MediaSession` API as well, so the OS treats the session as active media
+and is correspondingly less willing to freeze it. Set `mediaSession.metadata` to
+the passage's source reference — it reads nicely on a lock screen. Offer a
+`stop` action only; a sit has no meaningful pause, and a transport control that
+does nothing is worse than no control.
+
+If a bell is ever reported as unclear during a session but clean when rung on
+its own, suspect this tone: a phone speaker asked to move at 30 Hz can muddy
+everything above it. Duck the keepalive around each ringing — the bell is far
+above the silence threshold by itself.
 
 **Hold the screen awake.** Request `navigator.wakeLock.request('screen')` on
 start. Wake locks are automatically released when the page is hidden, so
@@ -259,11 +301,23 @@ suspension: if the screen stays on, most of the problem disappears.
 the wall clock. If bells were missed while suspended, mark them fired and move
 on. Never fire a backlog.
 
-**Handle the edges:** a system clock change mid-session (prefer
-`performance.now()` for elapsed, `Date.now()` only for the session record); the
-user backgrounding and returning after the session should have ended (show the
-After screen with the true end time); a reload mid-session (persist
-`startedAt` and offer to resume).
+**Handle the edges:** a system clock change mid-session; the user backgrounding
+and returning after the session should have ended (show the After screen with
+the true end time); a reload mid-session (persist `startedAt` and offer to
+resume).
+
+**Take two clock readings, not one.** A monotonic clock is right for elapsed
+time, because a system clock correction must not move the bells. But
+`performance.now()` can stall outright while a device sleeps, and a session that
+believes no time passed runs long — which is the worse failure, since the sitter
+waits past a bell that never comes with no way to know. So read both, and prefer
+the monotonic one *except* when the wall clock has advanced materially further
+(about 2s), which is what a stall looks like. A wall clock running behind has
+been set backwards; ignore it. Floor elapsed time at its previous value so it
+never decreases whatever the clocks do.
+
+`Date.now()` is still what the session record stores, since it is the only
+reading that survives a reload.
 
 ### Configuration
 
