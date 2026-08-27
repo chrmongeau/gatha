@@ -1,0 +1,28 @@
+name: Check references
+
+# The citations on the method page change roughly never, so this does not belong
+# on the deploy path — it would mean asking doi.org to resolve the same three
+# DOIs on every push, which is noise here and needless traffic there.
+#
+# What it is really watching for is link rot, which happens on the scale of
+# years. So: when the references themselves change, once a month, and on demand.
+on:
+  push:
+    paths:
+      - 'src/views/method.ts'
+      - 'tools/check-references.mts'
+      - '.github/workflows/references.yml'
+  schedule:
+    # The 8th, to avoid the top-of-month crush on GitHub's schedulers.
+    - cron: '17 6 8 * *'
+  workflow_dispatch:
+
+jobs:
+  references:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run check:references

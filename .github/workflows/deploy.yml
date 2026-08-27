@@ -42,17 +42,6 @@ jobs:
         with:
           path: dist
 
-  # Separate from the deploy, and deliberately not a dependency of it: a DOI
-  # registry being briefly unreachable is not a reason to stop publishing.
-  references:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm run check:references
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
