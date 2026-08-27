@@ -18,13 +18,23 @@ import { join } from 'node:path';
 
 const OUT = 'public/icons';
 
-/** SPEC.md §9, and the same values the stylesheet resolves to. */
+/**
+ * SPEC.md §9, lifted for the size an icon is actually looked at.
+ *
+ * On screen the line can afford to be faint: it is 390 pixels wide with nothing
+ * else on the screen, and the whole point of §9 is restraint. An icon is 56
+ * pixels on a wallpaper next to twenty others. The first version used the
+ * stylesheet's own tones and the unfilled half landed at 2.3∶1 against ink —
+ * below visible, so the eye found only the bright half and the icon read as a
+ * dash floating in a square. Each tone below is measured against the ink ground.
+ */
 const INK: RGB = [0x12, 0x15, 0x11];
-const BRONZE: RGB = [0x8e, 0x7b, 0x4a];
-/** 32% leaf over ink: the part of the line not yet cut. */
-const TRACK: RGB = [0x51, 0x50, 0x47];
-/** 80% leaf over ink: the part already cut. */
-const CUT: RGB = [0xb0, 0xaa, 0x98];
+/** 45% leaf over ink: the part of the line not yet cut. 3.3∶1. */
+const TRACK: RGB = [0x6b, 0x69, 0x5d];
+/** 92% leaf over ink: the part already cut. 10.2∶1. */
+const CUT: RGB = [0xc8, 0xc0, 0xac];
+/** Bronze lifted 18% toward leaf, so a bell survives being small. 5.4∶1. */
+const BELL: RGB = [0x9b, 0x8a, 0x5e];
 
 const SIZES = [48, 180, 192, 512] as const;
 
@@ -51,7 +61,7 @@ function draw(size: number): Uint8Array {
 
   const at = (fraction: number): number => Math.round(size * fraction);
 
-  const weight = Math.max(1, at(0.045));
+  const weight = Math.max(1, at(0.075));
   const left = at(0.16);
   const right = at(0.84);
   const span = right - left;
@@ -61,7 +71,9 @@ function draw(size: number): Uint8Array {
   rect(pixels, size, left, top, span, weight, TRACK);
   rect(pixels, size, left, top, Math.round(span * 0.52), weight, CUT);
 
-  const notchHeight = Math.max(3, at(0.11));
+  // Three and a half times the stroke. At the old ratio a thicker line turned
+  // the bells into blocks; a notch has to stay much taller than it is wide.
+  const notchHeight = Math.max(3, at(0.27));
   for (const position of [1 / 3, 2 / 3]) {
     rect(
       pixels,
@@ -70,7 +82,7 @@ function draw(size: number): Uint8Array {
       Math.round(top + weight / 2 - notchHeight / 2),
       weight,
       notchHeight,
-      BRONZE,
+      BELL,
     );
   }
 

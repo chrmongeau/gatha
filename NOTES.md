@@ -728,3 +728,32 @@ with no network behaves as it does in a tab.
 **Not built.** No update toast, no offline banner, no "new version available"
 prompt. The app is silent about all of it by design — section 7's argument
 against notifications applies just as well to the app talking about itself.
+
+---
+
+## The icon, made visible
+
+Reported after installing it: the icon was not right. It was drawn with the
+stylesheet's own tones, on the reasoning that the icon should match the app —
+which was the wrong reasoning. The screen gives that line 390 pixels and nothing
+to compete with; a home screen gives it 56 and twenty neighbours.
+
+Measured, the fault was not mainly width. The unfilled half of the line — the
+part of the sit still to come — sat at 2.3∶1 against ink, below anything that
+counts as visible, so only the bright half registered and the tile read as a dash
+floating in a square. A ladder of five variants confirmed it: thickening those
+same tones and changing nothing else produced a thicker faint grey.
+
+What ships now is the same drawing with width and tone moved together — stroke
+from 2.5 to 4.2 pixels at home-screen size, unfilled half to 3.3∶1, cut half to
+10.2∶1, bells to 5.4∶1 with the bronze lifted 18% toward leaf so it survives being
+small. Bronze stays: §9 gives it its place because it is the bell's own material,
+and the clearest variant of the five was the one that spent it.
+
+The notches also had to grow from 2.4× the stroke to 3.5×. At the old ratio a
+thicker line turned them into blocks rather than cuts.
+
+Worth recording: the worker version moved from `e815bb0ed814` to `f72ed71a2429`
+on this change, which is the icon-only case that the first, name-based hash would
+have missed — icon filenames carry no content hash. Good to have caught that a
+commit earlier rather than through an icon that never updated.
