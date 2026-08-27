@@ -629,3 +629,43 @@ describe an app without photographs.
 Note that this supersedes the phase 4 entry above: "whether the imagery looks
 right, once there are photographs" is no longer outstanding, because there will
 not be photographs.
+
+---
+
+## Design, after the imagery came out
+
+Two changes, chosen so the app reads as designed rather than as unstyled once
+there is no photograph to carry it.
+
+**One mark, everywhere.** The Sitting screen's signature is a line cut into the
+ground with notches at the interval bells. Every rule elsewhere in the app was a
+full-width `1px solid var(--hairline)` — chrome, borrowed from nothing. They are
+now the same cut: one short stroke, `--line-weight`, in `--line-track`. A
+divider belongs to a UI; a cut belongs to a leaf. Repeating one gesture is what
+keeps a minimal app from looking like an unfinished one.
+
+**The choices are bare numbers.** Today carried eleven bordered rectangles below
+the passage — by a distance the least quiet thing on the screen section 9 asks to
+keep quiet. The borders are gone; the chosen option carries the same cut mark
+instead, growing outward from the centre over a whole second. Begin is now the
+only bordered element on the screen, which is the correct hierarchy for the only
+primary action. Measured after: no overflow at 320px, every target still ≥44px,
+the mark 4.45:1 against ink and 5.88:1 against leaf — comfortably over the 3:1
+that a state indicator needs, given nothing frames these controls now.
+
+**The grain was tried and rejected.** Section 9 names a strong horizontal grain
+as part of the palm-leaf material, and it was never built, so it looked like the
+obvious third move. It is not affordable. The palette has no headroom: with a
+grain lightening the ink ground, `--text-faint` falls from 4.59:1 to 4.18:1 and
+`--accent-text` from 4.71:1 to 4.29:1 at the peak of the ramp, both under the
+floor this project set. Solving for the largest amplitude that holds 4.5:1 gives
+1% on dark and 2% on light — invisible. Reversing its direction per theme, so it
+shadows on ink and highlights on leaf, does hold contrast, but needs 50% black to
+reach a visible amplitude on a ground already near black, which shifts the mean
+ground measurably off `--ink`. Both prices are real and the thing bought is a
+texture nobody consciously sees. Section 9's grain stays unbuilt on purpose; if
+it is ever wanted, it needs a `--text-faint` with room in it first.
+
+The measuring script is not kept. It is four lines of luminance maths against
+`getComputedStyle`, easier to rewrite than to maintain, and a previous version of
+it had a bug that the product code never had.

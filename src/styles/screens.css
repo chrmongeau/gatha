@@ -133,26 +133,43 @@
   gap: 4px;
 }
 
+/*
+ * Bare numbers, not boxes. Eleven bordered rectangles were the least quiet
+ * thing on the screen section 9 asks to keep quiet, and the choice is legible
+ * without them: the legend says what the row is, and the chosen one carries a
+ * mark. That mark is the same cut as everywhere else, and it grows outward from
+ * the centre over a whole second, like a stylus drawing it.
+ */
 .choice__button {
   min-width: 3.25rem;
   min-height: var(--tap);
-  padding: var(--space-1) var(--space-1);
-  border: 1px solid var(--hairline);
-  border-radius: 2px;
+  padding: var(--space-1);
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-position: center bottom 0.5rem;
+  background-repeat: no-repeat;
+  background-size: 0 var(--line-weight);
   color: var(--text-quiet);
   font-size: var(--step--1);
-  transition: border-color var(--fade) ease, color var(--fade) ease;
+  transition: background-size var(--fade) ease, color var(--fade) ease;
 }
 
 .choice__button[aria-pressed='true'] {
-  border-color: var(--accent);
+  background-size: 1.5rem var(--line-weight);
   color: var(--text);
 }
 
+/* Nothing frames these any more, so a pointer over one has to say so. */
+.choice__button:hover:not(:disabled) {
+  color: var(--text);
+}
+
+/*
+ * An interval that will not fit inside the chosen duration. Faded rather than
+ * marked, so unavailable reads differently from merely unchosen.
+ */
 .choice__button:disabled {
-  border-style: dashed;
   cursor: not-allowed;
-  opacity: 0.35;
+  opacity: 0.3;
 }
 
 .choice__row--even .choice__button {
@@ -279,7 +296,6 @@
 
 .discourse__footer {
   padding-top: var(--space-3);
-  border-top: 1px solid var(--hairline);
   margin-top: var(--space-5);
 }
 
@@ -435,7 +451,6 @@
 
 .practice__block {
   padding-top: var(--space-3);
-  border-top: 1px solid var(--hairline);
   margin-bottom: var(--space-3);
 }
 
@@ -494,7 +509,6 @@
 
 .practice__footer {
   padding-top: var(--space-3);
-  border-top: 1px solid var(--hairline);
   margin-top: var(--space-4);
 }
 
@@ -568,7 +582,6 @@
 
 .method__close {
   padding-top: var(--space-3);
-  border-top: 1px solid var(--hairline);
   margin-top: var(--space-4);
   color: var(--text-quiet);
 }
@@ -577,4 +590,20 @@
 .method__access {
   display: block;
   color: var(--text-faint);
+}
+
+/*
+ * Every rule in the app is the same mark as the incised line on the Sitting
+ * screen: one short stroke cut into the ground, at the same weight, in the same
+ * colour. Not a full-width divider — a divider belongs to the chrome, and a cut
+ * belongs to the leaf. It is the one gesture the design repeats, which is what
+ * keeps a minimal app from reading as an unstyled one.
+ */
+.discourse__footer,
+.practice__block,
+.practice__footer,
+.method__close {
+  background-image: linear-gradient(var(--line-track), var(--line-track));
+  background-repeat: no-repeat;
+  background-size: var(--rule-length) var(--line-weight);
 }

@@ -70,6 +70,8 @@
 :root {
   /* Weight of the incised line and of the notches cut into it. Not themed. */
   --line-weight: 2px;
+  /* Length of a cut rule where one separates blocks, rather than a full divider. */
+  --rule-length: 3.5rem;
   --notch-weight: 2px;
   --notch-height: 14px;
 
