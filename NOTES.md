@@ -414,6 +414,18 @@ deleted and is not shipped, exactly as §15 instructs.
   the discourse" was opening the passage that had been on screen when the screen
   was built rather than the one showing.
 
+**Fixed after the first look on a device**
+
+- Six duration presets wrapped to two rows on a phone. The buttons are now bare
+  numbers in an equal six-column grid, with the unit moved into the legend, and
+  the accessible name still spells out "Sit for 20 minutes". One row at 320px.
+- An interval bell could be set longer than the sit. `bellSchedule` places
+  interval bells strictly inside the silence, so that combination produced no
+  bell at all — a setting that looked set and did nothing. `intervalFits` is now
+  the rule, intervals that cannot ring are disabled rather than hidden, and
+  `withDuration` drops an interval that stops fitting when a sit is shortened.
+  `loadPreferences` applies the same rule to a stored pair.
+
 **Needs human verification**
 
 - Whether the passages read well on a phone, and whether the type sizes are

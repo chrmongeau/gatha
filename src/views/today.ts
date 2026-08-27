@@ -1,6 +1,11 @@
 import type { Passage } from '../corpus/load';
 import type { SessionConfig } from '../timer/session';
-import { DURATION_PRESETS_MS, INTERVAL_PRESETS_MS } from '../timer/preferences';
+import {
+  DURATION_PRESETS_MS,
+  INTERVAL_PRESETS_MS,
+  intervalFits,
+  withDuration,
+} from '../timer/preferences';
 import { query } from './dom';
 
 /**
@@ -34,11 +39,11 @@ const MARKUP = `
     </div>
     <div class="today__controls">
       <fieldset class="choice">
-        <legend class="choice__legend">Duration</legend>
-        <div class="choice__row" data-role="durations"></div>
+        <legend class="choice__legend">Duration <span class="choice__unit">minutes</span></legend>
+        <div class="choice__row choice__row--even" data-role="durations"></div>
       </fieldset>
       <fieldset class="choice">
-        <legend class="choice__legend">Interval bell</legend>
+        <legend class="choice__legend">Interval bell <span class="choice__unit">minutes</span></legend>
         <div class="choice__row" data-role="intervals"></div>
       </fieldset>
     </div>
@@ -82,6 +87,9 @@ export function createTodayView(options: TodayViewOptions): TodayView {
     for (const button of intervals.querySelectorAll('button')) {
       const value = button.dataset.ms === '' ? null : Number(button.dataset.ms);
       button.setAttribute('aria-pressed', String(value === config.intervalMs));
+      // An interval that cannot ring inside this sit is not offered. Disabled
+      // rather than hidden, so the row does not reflow as the duration changes.
+      button.disabled = !intervalFits(value, config.durationMs);
     }
   };
 
@@ -90,12 +98,12 @@ export function createTodayView(options: TodayViewOptions): TodayView {
     durations.append(
       choiceButton({
         value: String(ms),
-        label: `${String(minutes)} min`,
-        // The two rows carry the same visible labels, so the accessible name
-        // has to say which row it belongs to or they are indistinguishable.
+        // Bare numbers, so all six presets fit one row on a narrow phone. The
+        // unit is in the legend, and the accessible name spells it out.
+        label: String(minutes),
         description: `Sit for ${String(minutes)} minutes`,
         onPick: () => {
-          config = { ...config, durationMs: ms };
+          config = withDuration(config, ms);
           paint();
         },
       }),
@@ -107,7 +115,7 @@ export function createTodayView(options: TodayViewOptions): TodayView {
     intervals.append(
       choiceButton({
         value: ms === null ? '' : String(ms),
-        label: ms === null ? 'None' : `${String(minutes)} min`,
+        label: ms === null ? 'None' : String(minutes),
         description: ms === null ? 'No interval bell' : `Interval bell every ${String(minutes)} minutes`,
         onPick: () => {
           config = { ...config, intervalMs: ms };

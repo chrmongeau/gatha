@@ -112,6 +112,13 @@
   text-transform: uppercase;
 }
 
+/* The unit lives here so the buttons can be bare numbers and fit one row. */
+.choice__unit {
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  text-transform: lowercase;
+}
+
 .choice__row {
   display: flex;
   flex-wrap: wrap;
@@ -119,10 +126,16 @@
   margin-top: var(--space-1);
 }
 
+/* Equal columns, so six presets share one row however narrow the screen. */
+.choice__row--even {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+
 .choice__button {
-  min-width: 3.75rem;
+  min-width: 3.25rem;
   min-height: var(--tap);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-1);
   border: 1px solid var(--hairline);
   border-radius: 2px;
   color: var(--text-quiet);
@@ -136,7 +149,13 @@
 }
 
 .choice__button:disabled {
-  opacity: 0.4;
+  border-style: dashed;
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.choice__row--even .choice__button {
+  min-width: 0;
 }
 
 /* ----------------------------------------------------------------- actions */

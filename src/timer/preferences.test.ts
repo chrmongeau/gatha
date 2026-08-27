@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_CONFIG, loadPreferences, savePreferences } from './preferences';
+import {
+  DEFAULT_CONFIG,
+  intervalFits,
+  loadPreferences,
+  savePreferences,
+  withDuration,
+} from './preferences';
 import type { StorageLike } from './active-session';
 
 class MemoryStorage implements StorageLike {
@@ -56,5 +62,33 @@ describe('preferences', () => {
     expect(() => {
       savePreferences(DEFAULT_CONFIG, null);
     }).not.toThrow();
+  });
+});
+
+describe('the interval bell and the duration together', () => {
+  it('accepts an interval that rings inside the silence', () => {
+    expect(intervalFits(300_000, 600_000)).toBe(true);
+    expect(intervalFits(null, 300_000)).toBe(true);
+  });
+
+  it('rejects an interval that would never ring', () => {
+    // bellSchedule places interval bells strictly inside the silence, so an
+    // interval at or past the duration silently produces none at all.
+    expect(intervalFits(900_000, 300_000)).toBe(false);
+    expect(intervalFits(300_000, 300_000)).toBe(false);
+  });
+
+  it('drops an interval that no longer fits when the sit is shortened', () => {
+    const chosen = { ...DEFAULT_CONFIG, durationMs: 1_200_000, intervalMs: 900_000 };
+
+    expect(withDuration(chosen, 300_000).intervalMs).toBeNull();
+    expect(withDuration(chosen, 1_800_000).intervalMs).toBe(900_000);
+  });
+
+  it('refuses to load a stored pair that cannot ring', () => {
+    const storage = new MemoryStorage();
+    storage.items.set('gatha.preferences', JSON.stringify({ durationMs: 300_000, intervalMs: 900_000 }));
+
+    expect(loadPreferences(storage).intervalMs).toBeNull();
   });
 });

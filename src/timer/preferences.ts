@@ -37,6 +37,30 @@ export const DEFAULT_CONFIG: SessionConfig = {
   leadOutMs: 12_000,
 };
 
+/**
+ * Whether an interval bell can actually ring in a session of this length.
+ *
+ * `bellSchedule` only places interval bells strictly inside the silence, so an
+ * interval at or beyond the duration produces none at all — a setting that
+ * looks set and does nothing. The choice should not be offered rather than
+ * silently ignored.
+ */
+export function intervalFits(intervalMs: number | null, durationMs: number): boolean {
+  return intervalMs === null || intervalMs < durationMs;
+}
+
+/**
+ * Change the duration, dropping an interval bell that no longer fits inside it.
+ * Shortening a sit should not leave an interval selected that cannot ring.
+ */
+export function withDuration(config: SessionConfig, durationMs: number): SessionConfig {
+  return {
+    ...config,
+    durationMs,
+    intervalMs: intervalFits(config.intervalMs, durationMs) ? config.intervalMs : null,
+  };
+}
+
 export function loadPreferences(storage: StorageLike | null): SessionConfig {
   if (storage === null) return DEFAULT_CONFIG;
   let raw: string | null;
@@ -75,5 +99,10 @@ function parse(value: unknown): SessionConfig | null {
     return null;
   }
 
-  return { ...DEFAULT_CONFIG, durationMs, intervalMs };
+  // A stored pair could have been written before the rule existed.
+  return {
+    ...DEFAULT_CONFIG,
+    durationMs,
+    intervalMs: intervalFits(intervalMs, durationMs) ? intervalMs : null,
+  };
 }
