@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "npm run check:fonts && vite build",
     "check:fonts": "node --experimental-strip-types tools/check-fonts.mts",
+    "check:references": "node --experimental-strip-types tools/check-references.mts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

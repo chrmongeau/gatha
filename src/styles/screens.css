@@ -564,3 +564,9 @@
   margin-top: var(--space-4);
   color: var(--text-quiet);
 }
+
+/* Where the full text stands, so a link's value is known before following it. */
+.method__access {
+  display: block;
+  color: var(--text-faint);
+}

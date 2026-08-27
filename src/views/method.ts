@@ -69,22 +69,38 @@ const ASK = [
 interface Reference {
   readonly text: string;
   readonly doi?: string;
+  /**
+   * Where the full text stands. §7.3 asks for no paywalled-only citation
+   * without saying the abstract is free, so a reader knows what a link gives
+   * them before they follow it.
+   */
+  readonly access: string;
 }
 
+/**
+ * Every DOI here is resolved against doi.org by `npm run check:references`,
+ * which also runs in CI. A citation nobody can follow is worse than no citation
+ * on a page whose whole argument is that the reader can check the work.
+ */
 const REFERENCES: readonly Reference[] = [
   {
     text: 'Lally, P., van Jaarsveld, C. H. M., Potts, H. W. W., & Wardle, J. (2010). How are habits formed: Modelling habit formation in the real world. European Journal of Social Psychology, 40(6), 998–1009.',
     doi: '10.1002/ejsp.674',
+    access: 'Abstract free; full text paywalled.',
   },
   {
     text: 'Gollwitzer, P. M., & Sheeran, P. (2006). Implementation intentions and goal achievement: A meta-analysis of effects and processes. Advances in Experimental Social Psychology, 38, 69–119.',
     doi: '10.1016/S0065-2601(06)38002-1',
+    access: 'Abstract free; full text paywalled.',
   },
   {
     text: 'Cochran, W., & Tesser, A. (1996). The “what the hell” effect: Some effects of goal proximity and goal framing on performance. In L. L. Martin & A. Tesser (Eds.), Striving and Feeling: Interactions Among Goals, Affect, and Self-Regulation (pp. 99–120). Lawrence Erlbaum.',
+    access: 'A book chapter, with no DOI of its own. In print only.',
   },
   {
     text: 'Wood, W., & Neal, D. T. (2007). A new look at habits and the habit–goal interface. Psychological Review, 114(4), 843–863.',
+    doi: '10.1037/0033-295X.114.4.843',
+    access: 'Abstract free; full text paywalled.',
   },
 ];
 
@@ -171,6 +187,12 @@ export function createMethodView(options: MethodViewOptions): MethodView {
       link.textContent = `doi:${reference.doi}`;
       item.append(link);
     }
+
+    const access = document.createElement('span');
+    access.className = 'method__access';
+    access.textContent = reference.access;
+    item.append(access);
+
     references.append(item);
   }
 
