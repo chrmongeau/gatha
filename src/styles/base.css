@@ -52,24 +52,6 @@ button {
   white-space: nowrap;
 }
 
-/*
- * Views cross-fade in over whole seconds — the pacing of a breath, not of a UI.
- * The first paint is exempt: a cold load should not open on a blank screen.
- */
-.is-entering {
-  animation: view-in var(--fade-slow) ease both;
-}
-
-@keyframes view-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
 /* Removed entirely, not shortened (SPEC.md section 9). */
 @media (prefers-reduced-motion: reduce) {
   *,

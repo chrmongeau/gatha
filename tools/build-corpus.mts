@@ -16,7 +16,6 @@
  * word of a passage or a discourse is copied from bilara-data verbatim. If a
  * passage looks wrong, the selection rules below are what to change.
  */
-import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
@@ -159,8 +158,8 @@ function readOptions(argv: readonly string[]): Options {
     return at >= 0 ? (argv[at + 1] ?? fallback) : fallback;
   };
   return {
-    lang: value('lang', process.env['LANG_CODE'] ?? 'en'),
-    translator: value('translator', process.env['TRANSLATOR'] ?? 'sujato'),
+    lang: value('lang', process.env.LANG_CODE ?? 'en'),
+    translator: value('translator', process.env.TRANSLATOR ?? 'sujato'),
     // The 60-word cap and the choice of segments are validated against one
     // language only. Word counts differ between languages; the structure must not.
     reference: !argv.includes('--secondary'),
@@ -439,7 +438,7 @@ function blocksOf(segments: readonly Segment[]): { kind: 'prose' | 'verse'; line
   for (const segment of segments) {
     const kind = segment.verse ? 'verse' : 'prose';
     const last = blocks.at(-1);
-    if (last === undefined || last.kind !== kind || (segment.opensBlock && kind === 'prose')) {
+    if (last?.kind !== kind || (segment.opensBlock && kind === 'prose')) {
       blocks.push({ kind, lines: [segment.text] });
     } else {
       last.lines.push(segment.text);
@@ -497,7 +496,7 @@ function groupByUid(ids: readonly string[]): Map<string, string[]> {
 
 /** `:0.x` carries collection, chapter and title, never the text itself. */
 function isHeading(id: string): boolean {
-  return /:0\./.test(id);
+  return id.includes(':0.');
 }
 
 function countWords(text: string): number {

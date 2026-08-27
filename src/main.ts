@@ -1,8 +1,12 @@
+import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/base.css';
-import './styles/shell.css';
+import './styles/screens.css';
 import './styles/sitting.css';
 
+import { dayNumber, passageForDay, rerollFrom } from './corpus/daily';
+import { loadCorpus, loadDiscourse, type Corpus, type Passage } from './corpus/load';
+import { Views, type Screen } from './state';
 import { createAudioEngine, createBellPreview } from './timer/audio';
 import { bellDurationSeconds } from './timer/bell';
 import { systemClock } from './timer/clock';
@@ -12,79 +16,113 @@ import {
   loadActiveSession,
   saveActiveSession,
 } from './timer/active-session';
-import { Session, endsAt, type SessionConfig, type SessionRecord } from './timer/session';
+import { loadPreferences, savePreferences } from './timer/preferences';
 import { Diagnostics } from './timer/diagnostics';
-import { readTestOptions } from './timer/test-options';
+import { Session, endsAt, type SessionConfig, type SessionRecord } from './timer/session';
 import { createScreenWakeLock } from './timer/wakelock';
+import { createAfterView } from './views/after';
+import { createDiscourseView } from './views/discourse';
 import { createSittingView } from './views/sitting';
+import { createTodayView, type TodayView } from './views/today';
 import { query } from './views/dom';
 
 /**
- * Phase 1 is the timer alone (SPEC.md section 14). Duration and interval are
- * hardcoded here; the Today screen that will set them arrives with the corpus.
- */
-const DEFAULT_CONFIG: SessionConfig = {
-  durationMs: 10 * 60_000,
-  intervalMs: 5 * 60_000,
-  prepareMs: 10_000,
-  // The closing bell is left its silence before anything is offered.
-  leadOutMs: 12_000,
-};
-
-// Device testing only, until the Today screen lands. See timer/test-options.ts.
-const OPTIONS = readTestOptions(window.location.search, DEFAULT_CONFIG);
-
-/**
- * SCAFFOLDING for phase 1 verification, and nothing more.
- *
- * The person testing this works from a phone with no checkout, so the session
- * length has to be selectable in the app and the log has to be on screen. Query
- * parameters were the first attempt and proved too easy to lose in transit — a
- * stripped URL silently runs the default session, which reads as a broken
- * timer. Buttons cannot be stripped.
- *
- * Setting this to false restores the app the spec describes: one Begin button,
- * ten minutes, no panel. Delete both when the Today screen lands in phase 2.
+ * SCAFFOLDING, kept on while the timer is still being verified on devices: a
+ * bell preview and the diagnostic log of the last session. Neither is a feature.
+ * Both come out once the timer is trusted.
  */
 function scaffoldingEnabled(): boolean {
   return true;
 }
 
-const TEST_PRESETS: readonly { readonly label: string; readonly config: SessionConfig }[] = [
-  {
-    label: '1 min',
-    config: { durationMs: 60_000, intervalMs: 30_000, prepareMs: 5_000, leadOutMs: 4_000 },
-  },
-  {
-    label: '3 min',
-    config: { durationMs: 180_000, intervalMs: 60_000, prepareMs: 5_000, leadOutMs: 6_000 },
-  },
-  { label: '10 min', config: DEFAULT_CONFIG },
-  {
-    label: '20 min',
-    config: { durationMs: 1_200_000, intervalMs: 300_000, prepareMs: 10_000, leadOutMs: 12_000 },
-  },
-];
-
-/** What Begin will start. The URL sets it; a preset button replaces it. */
-let activeConfig: SessionConfig = OPTIONS.config;
-
-const showDiagnostics = scaffoldingEnabled() || OPTIONS.showDiagnostics;
-
-const app = query(document, '#app', HTMLElement);
 const storage = defaultStorage();
+const views = new Views(query(document, '#app', HTMLElement));
 
-/** The log of the session just finished, kept so the done screen can show it. */
+let corpus: Corpus | null = null;
+let config: SessionConfig = loadPreferences(storage);
+/** The day's passage, or whatever a re-roll has landed on since. */
+let passageUid: string | null = null;
 let lastDiagnostics: Diagnostics | null = null;
 
-start();
+void boot();
 
-function start(): void {
-  const resumable = findResumableSession();
-  renderShell(resumable);
+async function boot(): Promise<void> {
+  const settled = pending();
+  try {
+    corpus = await loadCorpus();
+  } catch {
+    settled();
+    views.show(
+      message(
+        'The passages could not be loaded. They are stored with the app, so this is usually a connection that dropped mid-download.',
+      ),
+    );
+    return;
+  }
+  settled();
+  passageUid = passageForDay(corpus.order, dayNumber(new Date()));
+  showToday();
 }
 
-/** A stored session is only worth offering if it is still running. */
+/**
+ * Announce a wait only if there is one. The corpus is served alongside the app
+ * and usually arrives in a few milliseconds; flashing a placeholder and then
+ * cross-fading for two seconds makes a fast load look slow.
+ */
+function pending(): () => void {
+  const timer = window.setTimeout(() => {
+    views.show(message('…'));
+  }, 400);
+  return () => {
+    clearTimeout(timer);
+  };
+}
+
+function currentPassage(): Passage | null {
+  if (corpus === null || passageUid === null) return null;
+  return corpus.passages.get(passageUid) ?? null;
+}
+
+let today: TodayView | null = null;
+
+function showToday(): void {
+  const passage = currentPassage();
+  if (passage === null) {
+    views.show(message('No passage for today.'));
+    return;
+  }
+
+  const resumable = findResumableSession();
+  const view = createTodayView({
+    passage,
+    config,
+    onBegin: (chosen) => {
+      config = chosen;
+      savePreferences(config, storage);
+      run(Session.start(config, systemClock), false);
+    },
+    onReroll: () => {
+      if (corpus === null || passageUid === null) return;
+      passageUid = rerollFrom(corpus.order, passageUid);
+      const next = currentPassage();
+      if (next !== null) today?.showPassage(next);
+    },
+    onRead: () => {
+      // Read at click time, not captured: a re-roll changes the passage in
+      // place, and this must open the one on screen rather than the one that
+      // was on screen when the screen was built.
+      const showing = currentPassage();
+      if (showing !== null) void showDiscourse(showing, showToday);
+    },
+    ...(scaffoldingEnabled() ? { extras: scaffolding() } : {}),
+  });
+
+  if (resumable !== null) view.element.prepend(resumeBanner(resumable));
+  today = view;
+  views.show(view, view.element.querySelector<HTMLElement>('[data-role="begin"]'));
+}
+
+/** A stored session is only worth offering while it is still running. */
 function findResumableSession(): SessionRecord | null {
   if (storage === null) return null;
   const record = loadActiveSession(storage);
@@ -96,146 +134,82 @@ function findResumableSession(): SessionRecord | null {
   return record;
 }
 
-function renderShell(resumable: SessionRecord | null): void {
-  const shell = document.createElement('section');
-  shell.className = 'shell';
-  shell.innerHTML = `
-    <h1 class="shell__title">gatha</h1>
-    <p class="shell__note"></p>
-    <div class="shell__actions">
-      <button type="button" class="shell__begin">Begin</button>
-    </div>
+function resumeBanner(record: SessionRecord): HTMLElement {
+  const banner = document.createElement('div');
+  banner.className = 'resume';
+  banner.innerHTML = `
+    <p class="resume__text">A sit is already in progress.</p>
+    <button type="button" class="action action--quiet" data-role="resume">Resume it</button>
   `;
-
-  const actions = query(shell, '.shell__actions', HTMLElement);
-  const begin = query(shell, '.shell__begin', HTMLButtonElement);
-  const note = query(shell, '.shell__note', HTMLElement);
-  note.textContent = describe(activeConfig);
-
-  if (resumable === null) {
-    begin.addEventListener('click', () => {
-      run(Session.start(activeConfig, systemClock), false);
-    });
-  } else {
-    begin.textContent = 'Resume';
-    begin.addEventListener('click', () => {
-      run(Session.resume(resumable, systemClock), true);
-    });
-
-    const discard = document.createElement('button');
-    discard.type = 'button';
-    discard.className = 'shell__quiet';
-    discard.textContent = 'Start again';
-    discard.addEventListener('click', () => {
-      if (storage !== null) clearActiveSession(storage);
-      run(Session.start(activeConfig, systemClock), false);
-    });
-    actions.append(discard);
-
-    note.textContent = 'A sit is already in progress.';
-  }
-
-  if (scaffoldingEnabled() && resumable === null) shell.append(presetPicker(note));
-
-  show(shell, begin);
+  query(banner, '[data-role="resume"]', HTMLButtonElement).addEventListener('click', () => {
+    run(Session.resume(record, systemClock), true);
+  });
+  return banner;
 }
 
-/**
- * SCAFFOLDING. A row of session lengths, so a device test does not depend on a
- * URL surviving the trip to the phone. Goes with the rest of it in phase 2.
- */
-function presetPicker(note: HTMLElement): HTMLElement {
-  const picker = document.createElement('div');
-  picker.className = 'presets';
-  picker.innerHTML = `<p class="presets__label">for testing</p>`;
-
-  const row = document.createElement('div');
-  row.className = 'presets__row';
-
-  for (const preset of TEST_PRESETS) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'presets__button';
-    button.textContent = preset.label;
-    button.setAttribute('aria-pressed', String(preset.config === activeConfig));
-    button.addEventListener('click', () => {
-      activeConfig = preset.config;
-      note.textContent = describe(activeConfig);
-      for (const other of row.children) {
-        other.setAttribute('aria-pressed', String(other === button));
-      }
-    });
-    row.append(button);
+async function showDiscourse(passage: Passage, back: () => void): Promise<void> {
+  const settled = pending();
+  try {
+    const discourse = await loadDiscourse(passage.parentUid);
+    settled();
+    const view = createDiscourseView({ discourse, onBack: back });
+    views.show(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
+  } catch {
+    settled();
+    views.show(message('That discourse could not be loaded.'));
   }
-
-  picker.append(row);
-  picker.append(bellPreview());
-  return picker;
 }
 
-/**
- * SCAFFOLDING. Ring each bell on demand, so the sound can be judged in seconds
- * rather than through a twenty-minute sit.
- */
-function bellPreview(): HTMLElement {
-  const preview = document.createElement('div');
-  preview.className = 'presets__row presets__row--bells';
-
-  const ring = createBellPreview();
-  for (const kind of ['opening', 'interval', 'closing'] as const) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'presets__button';
-    button.textContent = kind;
-    button.disabled = ring === null;
-    button.addEventListener('click', () => {
-      ring?.(kind);
-    });
-    preview.append(button);
-  }
-
-  return preview;
+function showAfter(passage: Passage): void {
+  const view = createAfterView({
+    passage,
+    onRead: () => {
+      void showDiscourse(passage, () => {
+        showAfter(passage);
+      });
+    },
+    onDone: showToday,
+  });
+  views.show(view, view.element.querySelector<HTMLElement>('[data-role="read"]'));
 }
 
 /**
  * Run a session to its end.
  *
  * Everything here happens inside the tap that started it: the AudioContext, the
- * bell schedule and the wake lock all need the user gesture. After that the
- * loop only ever reads the clock — no ticks are counted, and a frozen main
- * thread costs nothing but the frames it did not draw.
+ * bell schedule and the wake lock all need the user gesture. After that the loop
+ * only ever reads the clock.
  */
 function run(session: Session, resumed: boolean): void {
-  const config = session.record.config;
+  const sessionConfig = session.record.config;
   if (storage !== null) saveActiveSession(session.record, storage);
 
   const first = session.read();
-  const endEarly = (): void => {
-    const at = session.elapsedMs;
-    log.add(at, 'ended early');
-    stop(at, true);
-    // Ending early normally just goes back. While testing it must not throw
-    // away the log — that is exactly when the log is worth reading.
-    if (showDiagnostics) renderDone(false);
-    else renderShell(null);
-  };
-
-  const engine = createAudioEngine({
-    nowPlaying: { title: 'Sitting', artist: 'Gatha' },
-    onStop: endEarly,
-  });
+  const passage = currentPassage();
   const wakeLock = createScreenWakeLock();
 
   const log = new Diagnostics({
     startedAt: session.record.startedAt,
-    durationMs: config.durationMs,
-    intervalMs: config.intervalMs,
+    durationMs: sessionConfig.durationMs,
+    intervalMs: sessionConfig.intervalMs,
     wakeLockSupported: wakeLock.supported,
-    audioSupported: engine !== null,
+    audioSupported: true,
     userAgent: navigator.userAgent,
   });
   lastDiagnostics = log;
   log.add(first.elapsedMs, resumed ? 'session resumed' : 'session started');
+
+  const endEarly = (): void => {
+    const at = session.elapsedMs;
+    log.add(at, 'ended early');
+    stop(at, true);
+    showToday();
+  };
+
+  const engine = createAudioEngine({
+    nowPlaying: { title: passage?.reference ?? 'Sitting', artist: 'Gatha' },
+    onStop: endEarly,
+  });
 
   const scheduled = session.remainingBells(first.elapsedMs);
   engine?.scheduleFrom(scheduled, first.elapsedMs);
@@ -245,38 +219,28 @@ function run(session: Session, resumed: boolean): void {
     log.add(session.elapsedMs, `wake lock ${wakeLock.held ? 'held' : 'NOT held'}`);
   });
 
-  const view = createSittingView({
-    config,
-    onEnd: endEarly,
-  });
+  const view = createSittingView({ config: sessionConfig, onEnd: endEarly });
 
   let frame = 0;
   let running = true;
 
-  /**
-   * SCAFFOLDING. A slow pulse that only writes to the log. Chrome throttles
-   * background timers rather than stopping them, so if these keep appearing
-   * while the screen is locked the page was alive, and if there is a gap it was
-   * frozen. Either answer is decisive, and nothing else can tell us.
-   *
-   * It deliberately does not touch the session: reading it would consume the
-   * bells the animation frame is there to report.
-   */
+  const resyncAudio = (reason: string): void => {
+    if (!running || engine === null) return;
+    const at = session.elapsedMs;
+    engine.resume();
+    const drift = engine.resync(session.remainingBells(at), at);
+    log.add(at, `resync on ${reason}: audio ${engine.state}, drift ${drift.toFixed(1)}s`);
+  };
+
   const heartbeat = window.setInterval(() => {
     const at = systemClock.wall() - session.record.startedAt;
     log.add(
       at,
-      `heartbeat (wall), audio ${audioState(engine)}, lock ${
-        wakeLock.held ? 'held' : 'released'
-      }, page ${document.visibilityState}`,
+      `heartbeat (wall), audio ${audioState(engine)}, lock ${wakeLock.held ? 'held' : 'released'}, page ${document.visibilityState}`,
     );
-    // A throttled background timer is still a chance to notice the audio clock
-    // has fallen behind, and it does not depend on any event firing.
     if (engine !== null && engine.state !== 'running') resyncAudio('heartbeat');
   }, 30_000);
 
-  // Chrome freezes a backgrounded page outright under memory pressure. If that
-  // is what kills a session, this is the only trace it leaves.
   const onFreeze = (): void => {
     log.add(systemClock.wall() - session.record.startedAt, 'page FROZEN by the browser');
   };
@@ -286,8 +250,6 @@ function run(session: Session, resumed: boolean): void {
     cancelAnimationFrame(frame);
     tick();
   };
-  document.addEventListener('freeze', onFreeze);
-  document.addEventListener('resume', onResume);
 
   const stop = (elapsedMs: number, immediate: boolean): void => {
     if (!running) return;
@@ -297,26 +259,9 @@ function run(session: Session, resumed: boolean): void {
     document.removeEventListener('visibilitychange', onVisibilityChange);
     document.removeEventListener('freeze', onFreeze);
     document.removeEventListener('resume', onResume);
-    view.destroy();
     void wakeLock.release();
     if (storage !== null) clearActiveSession(storage);
-    closeAudio(engine, config, elapsedMs, immediate);
-  };
-
-  /**
-   * Put the audio back in step with the wall clock.
-   *
-   * Called from every event that can mean the page has come back, because no
-   * single one of them can be relied on: a device test showed a page frozen for
-   * eight minutes and thawed without `visibilitychange` ever firing, so a
-   * recovery hung on that event alone never ran at all.
-   */
-  const resyncAudio = (reason: string): void => {
-    if (!running || engine === null) return;
-    const at = session.elapsedMs;
-    engine.resume();
-    const drift = engine.resync(session.remainingBells(at), at);
-    log.add(at, `resync on ${reason}: audio ${engine.state}, drift ${drift.toFixed(1)}s`);
+    closeAudio(engine, sessionConfig, elapsedMs, immediate);
   };
 
   const tick = (): void => {
@@ -326,9 +271,6 @@ function run(session: Session, resumed: boolean): void {
 
     for (const bell of reading.due) log.add(reading.elapsedMs, `bell ${bell.kind} due`);
     for (const bell of reading.skipped) {
-      // Not a failure: the main thread was asleep when this bell's moment
-      // passed, so it is marked rather than replayed. The audio for it was
-      // scheduled at the start and is unaffected by any of this.
       const late = (reading.elapsedMs - bell.offsetMs) / 1000;
       log.add(
         reading.elapsedMs,
@@ -339,7 +281,8 @@ function run(session: Session, resumed: boolean): void {
     if (reading.finished) {
       log.add(reading.elapsedMs, `finished, audio ${audioState(engine)}`);
       stop(reading.elapsedMs, false);
-      renderDone(true);
+      if (passage !== null) showAfter(passage);
+      else showToday();
       return;
     }
     frame = requestAnimationFrame(tick);
@@ -358,8 +301,10 @@ function run(session: Session, resumed: boolean): void {
   }
 
   document.addEventListener('visibilitychange', onVisibilityChange);
+  document.addEventListener('freeze', onFreeze);
+  document.addEventListener('resume', onResume);
 
-  show(view.element, view.element);
+  views.show(view, view.element);
   view.update(first);
   frame = requestAnimationFrame(tick);
 }
@@ -370,7 +315,7 @@ function run(session: Session, resumed: boolean): void {
  */
 function closeAudio(
   engine: ReturnType<typeof createAudioEngine>,
-  config: SessionConfig,
+  sessionConfig: SessionConfig,
   elapsedMs: number,
   immediate: boolean,
 ): void {
@@ -379,8 +324,7 @@ function closeAudio(
     engine.close();
     return;
   }
-
-  const closingMs = config.prepareMs + config.durationMs;
+  const closingMs = sessionConfig.prepareMs + sessionConfig.durationMs;
   const tailMs = closingMs + bellDurationSeconds('closing') * 1000 - elapsedMs;
   if (tailMs <= 0) {
     engine.close();
@@ -391,100 +335,73 @@ function closeAudio(
   }, tailMs);
 }
 
-function renderDone(completed: boolean): void {
-  const done = document.createElement('section');
-  done.className = 'shell';
-  done.innerHTML = `
-    <p class="shell__note"></p>
-    <div class="shell__actions">
-      <button type="button" class="shell__quiet">Back</button>
-    </div>
-  `;
-
-  query(done, '.shell__note', HTMLElement).textContent = completed
-    ? 'The sit is complete.'
-    : 'The sit was ended.';
-
-  const back = query(done, 'button', HTMLButtonElement);
-  back.addEventListener('click', () => {
-    start();
-  });
-
-  if (showDiagnostics && lastDiagnostics !== null) {
-    done.append(diagnosticsPanel(lastDiagnostics));
-  }
-
-  show(done, back);
-}
-
-/** Testing scaffolding: the session's log, on screen, copyable. */
-function diagnosticsPanel(log: Diagnostics): HTMLElement {
-  const panel = document.createElement('div');
-  panel.className = 'diagnostics';
-  panel.innerHTML = `
-    <button type="button" class="shell__quiet diagnostics__copy">Copy log</button>
-    <pre class="diagnostics__text"></pre>
-  `;
-
-  const text = log.toText();
-  query(panel, '.diagnostics__text', HTMLElement).textContent = text;
-
-  const copy = query(panel, '.diagnostics__copy', HTMLButtonElement);
-  copy.addEventListener('click', () => {
-    // The Clipboard API is typed as always present but is absent outside a
-    // secure context, where reaching for it throws rather than returning null.
-    try {
-      void navigator.clipboard.writeText(text).then(
-        () => {
-          copy.textContent = 'Copied';
-        },
-        () => {
-          copy.textContent = 'Select the text below';
-        },
-      );
-    } catch {
-      copy.textContent = 'Select the text below';
-    }
-  });
-
-  return panel;
-}
-
 function audioState(engine: ReturnType<typeof createAudioEngine>): string {
   return engine === null ? 'unsupported' : engine.state;
 }
 
-/** Plain words for whatever session the URL asked for. */
-function describe(config: SessionConfig): string {
-  const interval =
-    config.intervalMs === null
-      ? 'A bell at the start and at the end.'
-      : `A bell at the start, every ${minutes(config.intervalMs)}, and at the end.`;
-  return `${capitalise(minutes(config.durationMs))}. ${interval}`;
+function message(text: string): Screen {
+  const element = document.createElement('section');
+  element.className = 'screen screen--message';
+  const paragraph = document.createElement('p');
+  paragraph.className = 'message';
+  paragraph.textContent = text;
+  element.append(paragraph);
+  return {
+    element,
+    destroy(): void {
+      element.remove();
+    },
+  };
 }
 
-/** Whole minutes where it divides, seconds where it does not. */
-function minutes(ms: number): string {
-  if (ms < 60_000 || ms % 60_000 !== 0) {
-    const seconds = Math.round(ms / 1000);
-    return `${String(seconds)} ${seconds === 1 ? 'second' : 'seconds'}`;
+/** SCAFFOLDING. The bell preview, and the log of the session just finished. */
+function scaffolding(): HTMLElement {
+  const panel = document.createElement('div');
+  panel.className = 'scaffold';
+  panel.innerHTML = `<p class="scaffold__label">for testing</p><div class="scaffold__row"></div>`;
+
+  const row = query(panel, '.scaffold__row', HTMLElement);
+  const ring = createBellPreview();
+  for (const kind of ['opening', 'interval', 'closing'] as const) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'choice__button';
+    button.textContent = kind;
+    button.disabled = ring === null;
+    button.addEventListener('click', () => {
+      ring?.(kind);
+    });
+    row.append(button);
   }
-  const value = ms / 60_000;
-  return `${String(value)} ${value === 1 ? 'minute' : 'minutes'}`;
-}
 
-function capitalise(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
+  const log = lastDiagnostics;
+  if (log !== null) {
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'choice__button';
+    copy.textContent = 'Copy last log';
+    const text = log.toText();
+    copy.addEventListener('click', () => {
+      try {
+        void navigator.clipboard.writeText(text).then(
+          () => {
+            copy.textContent = 'Copied';
+          },
+          () => {
+            copy.textContent = 'Copy failed';
+          },
+        );
+      } catch {
+        copy.textContent = 'Copy failed';
+      }
+    });
+    row.append(copy);
 
-/**
- * Swap the visible view. Every view after the first fades in and takes focus;
- * the first paint does neither — a cold load should not open on a blank screen
- * with a focus ring already drawn on it.
- */
-function show(view: HTMLElement, focusTarget?: HTMLElement): void {
-  const isTransition = app.childElementCount > 0;
-  if (isTransition) view.classList.add('is-entering');
-  app.replaceChildren(view);
-  if (isTransition) focusTarget?.focus();
+    const pre = document.createElement('pre');
+    pre.className = 'scaffold__text';
+    pre.textContent = text;
+    panel.append(pre);
+  }
+
+  return panel;
 }

@@ -38,10 +38,19 @@
    */
   --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', roboto, sans-serif;
 
+  /*
+   * Canonical text. Gentium Plus is a functional choice, not an aesthetic one:
+   * the translations are dense with Pali diacritics and most faces have no
+   * Latin Extended Additional coverage at all (SPEC.md §9).
+   */
+  --font-canon: 'Gentium Plus', charter, 'Bitstream Charter', 'Iowan Old Style',
+    'Source Serif Pro', georgia, serif;
+
   --step--1: 0.8125rem;
   --step-0: 1rem;
   --step-1: 1.25rem;
   --step-2: 1.75rem;
+  --step-3: clamp(1.5rem, 1.15rem + 1.75vw, 2.125rem);
 
   --space-1: 0.5rem;
   --space-2: 1rem;

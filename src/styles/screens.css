@@ -1,0 +1,326 @@
+/*
+ * Today, After, Discourse. Type scale and palette from SPEC.md §9: the passage
+ * is the largest type in the app, set generously, with its source small and
+ * quiet beneath it.
+ */
+.screen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-3)
+    calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+
+.is-entering {
+  animation: view-in var(--fade-slow) ease both;
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.screen--message {
+  align-items: center;
+  justify-content: center;
+}
+
+.message {
+  max-width: 30ch;
+  color: var(--text-quiet);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+/* ----------------------------------------------------------------- passage */
+
+.today,
+.after {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  gap: var(--space-4);
+}
+
+.today__passage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/*
+ * Canonical text. Gentium Plus carries the diacritics that appear on every
+ * screen — Sāvatthī, nibbāna, Theragāthā — which most display faces would drop
+ * mid-word (SPEC.md §9).
+ */
+.passage {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-canon);
+  font-size: var(--step-3);
+  line-height: 1.45;
+  text-wrap: pretty;
+  white-space: pre-line;
+}
+
+/* Centre only a short passage; long text is set ranged left. */
+.passage[data-length='short'] {
+  text-align: center;
+}
+
+.passage__source {
+  margin: 0;
+  color: var(--text-faint);
+  font-family: var(--font-canon);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+}
+
+.passage[data-length='short'] + .passage__source {
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.today__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.choice {
+  padding: 0;
+  border: 0;
+  margin: 0;
+}
+
+.choice__legend {
+  padding: 0;
+  color: var(--text-faint);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.choice__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.choice__button {
+  min-width: 3.75rem;
+  min-height: var(--tap);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  color: var(--text-quiet);
+  font-size: var(--step--1);
+  transition: border-color var(--fade) ease, color var(--fade) ease;
+}
+
+.choice__button[aria-pressed='true'] {
+  border-color: var(--bronze);
+  color: var(--text);
+}
+
+.choice__button:disabled {
+  opacity: 0.4;
+}
+
+/* ----------------------------------------------------------------- actions */
+
+.today__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.action {
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-3);
+}
+
+.action--primary {
+  width: 100%;
+  max-width: 20rem;
+  border: 1px solid var(--bronze);
+  border-radius: 2px;
+  background: var(--dusk);
+  color: var(--text);
+  font-size: var(--step-1);
+  letter-spacing: 0.12em;
+  transition: background-color var(--fade) ease;
+}
+
+.action--primary:hover {
+  background: color-mix(in srgb, var(--bronze) 22%, var(--dusk));
+}
+
+.action--quiet {
+  color: var(--text-faint);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+}
+
+.today__quiet {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  gap: var(--space-1);
+}
+
+.resume__text {
+  margin: 0;
+  color: var(--text-quiet);
+  font-size: var(--step--1);
+}
+
+/* --------------------------------------------------------------- discourse */
+
+.screen--discourse {
+  padding-top: calc(var(--space-2) + env(safe-area-inset-top));
+}
+
+.discourse__nav {
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto var(--space-2);
+}
+
+/* Long-form reading. A measure this side of 70 characters, and room to breathe. */
+.discourse {
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  font-family: var(--font-canon);
+}
+
+.discourse__header {
+  margin-bottom: var(--space-4);
+}
+
+.discourse__reference {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+}
+
+.discourse__title {
+  margin: var(--space-1) 0 0;
+  color: var(--text);
+  font-size: var(--step-2);
+  font-weight: 400;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.discourse__prose,
+.discourse__verse {
+  max-width: 62ch;
+  margin: 0 0 var(--space-2);
+  color: var(--text);
+  font-size: var(--step-1);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.discourse__verse {
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--hairline);
+  margin-block: var(--space-3);
+  color: var(--text-quiet);
+  line-height: 1.5;
+}
+
+.discourse__footer {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+  margin-top: var(--space-5);
+}
+
+.discourse__source {
+  color: var(--bronze);
+  font-size: var(--step--1);
+}
+
+.discourse__credit {
+  max-width: 52ch;
+  margin: var(--space-2) 0 0;
+  color: var(--text-faint);
+  font-size: var(--step--1);
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------- scaffolding, phase 1 only */
+
+.scaffold {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+}
+
+.scaffold__label {
+  margin: 0 0 var(--space-1);
+  color: var(--text-faint);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.scaffold__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.scaffold__text {
+  max-height: 40vh;
+  padding: var(--space-2);
+  border: 1px solid var(--hairline);
+  margin: var(--space-1) 0 0;
+  color: var(--text-quiet);
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  -webkit-user-select: all;
+  user-select: all;
+}
+
+/* A re-roll changes only the passage, and only the passage fades for it. */
+.today__passage.is-changing {
+  animation: passage-in var(--fade) ease both;
+}
+
+@keyframes passage-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

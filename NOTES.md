@@ -332,3 +332,91 @@ Everything that matters most about this phase:
 
 See the handoff message for the exact 20-minute test. **Phase 2 does not start
 until that comes back clean.**
+
+
+---
+
+## Phase 2 — Corpus
+
+**Built**
+
+- `tools/build-corpus.mts` — bilara-data to `public/corpus`, run by hand. Shallow,
+  blobless, sparse clone of the `published` branch. `--lang` and `--translator`
+  are parameters throughout, defaulting to `en` and `sujato`.
+- `src/corpus/daily.ts` — day number to passage. Pure, takes a `Date` rather than
+  reading a clock.
+- `src/corpus/load.ts` — fetches the corpus, every URL built from
+  `import.meta.env.BASE_URL`.
+- `src/state.ts` — the view state machine, which four screens finally justify.
+- `src/views/today.ts`, `after.ts`, `discourse.ts`.
+- `src/styles/fonts.css` plus two self-hosted Gentium Plus subsets, and
+  `tools/check-fonts.mts` as the build check.
+- 1035 passages from all eight collections, 673 discourses, 3.4MB. No repeat for
+  nearly three years.
+
+**Decisions SPEC.md did not cover**
+
+- *Verse is identified from the html tree, not by heuristic.* `html/pli/ms`
+  carries `<blockquote class='gatha'>` and `<span class='verse-line'>` markup,
+  and segment ids are shared across languages, so this is exactly the
+  "structural fact about the canon, not about English" the split in §3 step 6
+  depends on. It is markup, not Pali text: the root text under `root/pli/ms` is
+  still not fetched and never displayed.
+- *Selection rules.* A sutta that ends in an utterance contributes that closing
+  verse block. A sutta that is itself a verse contributes the whole of it if it
+  fits in sixty words; if it does not — Mettā and Maṅgala are each one
+  blockquote of ten stanzas — it contributes a single stanza, and only one that
+  opens without a word that depends on the line before it and closes a sentence.
+  Most do not, and are skipped. **No prose passage is ever taken.** SN prose
+  almost always opens mid-scene, and §3 says to bias toward skipping.
+- *One passage per sutta.* §3 says each verse of dhp/thag/thig is its own
+  passage, and for dhp that is automatic since each verse is its own uid. For a
+  long Theragāthā only the first qualifying stanza is taken. Corpus breadth is
+  not the constraint at 1035.
+- *Dedup is corpus-wide, not per collection.* Mettā and Maṅgala appear in both
+  Khuddakapāṭha and the Sutta Nipāta; the day should not serve the same text
+  under two names. Jaccard similarity at 0.75 within a collection also removes
+  the peyyāla runs, which is what §3 asks for — 160 dropped.
+- *Citation labels are a table in the builder.* "Udāna", "Theragāthā" and the
+  rest are bibliographic metadata rather than canonical text; every title, every
+  passage and every line of every discourse still comes from the data verbatim.
+- *Fonts are Google's own Gentium Plus subsets, self-hosted.* No subsetting
+  tool is needed and none is a dependency. `latin` and `latin-ext` together
+  carry all ten diacritics the corpus uses. 91KB, served from the app's origin.
+
+**Proved, per SPEC.md §15**
+
+The builder was run against `de`/`sabbamitta`: 1035 of 1035 passages covered,
+same ids, same segments, same passage on the same day, genuinely German text.
+That run also caught a real design error — the script had been re-deriving the
+selection for every language instead of reading `selection.json`, which would
+have made the split nominal rather than real. Fixed, then the German output was
+deleted and is not shipped, exactly as §15 instructs.
+
+**Deferred**
+
+- The day's image on Today. Phase 4.
+- "Confirm the session was recorded" on After — there is no session log yet, and
+  the screen does not claim there is. Phase 3.
+- The two-minute floor and its copy. That belongs with §7's reasoning, phase 3.
+- No language picker while one language ships. `ACTIVE_LANGUAGE` is a constant
+  with a TODO, as §15 requires.
+
+**Fixed while building**
+
+- Two rows of choice buttons carried identical accessible names — "5 min" under
+  both Duration and Interval bell — so a screen reader could not tell them
+  apart. Each now says what it sets.
+- A cold load flashed a placeholder and then cross-faded for 2.4s. The
+  placeholder now appears only if loading actually takes longer than 400ms.
+- A re-roll rebuilt and cross-faded the whole screen. Only the passage changes,
+  so only the passage fades now — which in turn exposed a worse bug, that "Read
+  the discourse" was opening the passage that had been on screen when the screen
+  was built rather than the one showing.
+
+**Needs human verification**
+
+- Whether the passages read well on a phone, and whether the type sizes are
+  right in a dim room.
+- Whether any passage looks wrong. If one does, the fix is in the selection
+  rules in `tools/build-corpus.mts` — never in the output.
