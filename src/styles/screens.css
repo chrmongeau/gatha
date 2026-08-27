@@ -126,10 +126,11 @@
   margin-top: var(--space-1);
 }
 
-/* Equal columns, so six presets share one row however narrow the screen. */
+/* Equal columns, so all seven presets share one row however narrow the screen. */
 .choice__row--even {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
 }
 
 .choice__button {
@@ -308,4 +309,258 @@
   to {
     opacity: 1;
   }
+}
+
+/* ------------------------------------------------------------ the floor */
+
+.today__floor {
+  max-width: 32ch;
+  margin: 0;
+  color: var(--text-faint);
+  font-size: var(--step--1);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.anchor {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  gap: var(--space-1);
+}
+
+.after__recorded {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- practice */
+
+.practice,
+.method {
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.practice__title,
+.method__title {
+  margin: 0 0 var(--space-3);
+  color: var(--text);
+  font-family: var(--font-canon);
+  font-size: var(--step-2);
+  font-weight: 400;
+}
+
+.practice__headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0 0 var(--space-3);
+  gap: var(--space-2);
+}
+
+.practice__fraction {
+  color: var(--text);
+  font-family: var(--font-canon);
+  font-size: var(--step-3);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.practice__caption {
+  color: var(--text-quiet);
+  font-size: var(--step--1);
+}
+
+/*
+ * The heat map. Weekday rows, oldest column first. A day not sat is drawn no
+ * differently from the ground, so gaps read as texture and not as failure —
+ * there is deliberately no colour here that could be read as a warning.
+ */
+.practice__calendar {
+  display: grid;
+  overflow-x: auto;
+  grid-auto-flow: column;
+  grid-auto-columns: 0.75rem;
+  grid-template-rows: repeat(7, 0.75rem);
+  gap: 3px;
+  margin-bottom: var(--space-4);
+}
+
+.day {
+  border: 1px solid var(--hairline);
+  border-radius: 1px;
+}
+
+.day--blank {
+  border-color: transparent;
+}
+
+.day[data-sat='true'] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--bronze) calc(var(--weight) * 100%), var(--dusk));
+}
+
+.practice__totals {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-4);
+  gap: var(--space-4);
+}
+
+.practice__total dt {
+  color: var(--text-faint);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.practice__total dd {
+  margin: var(--space-1) 0 0;
+  color: var(--text);
+  font-family: var(--font-canon);
+  font-size: var(--step-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.practice__block {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+  margin-bottom: var(--space-3);
+}
+
+.practice__anchor {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  margin-top: var(--space-1);
+  background: var(--dusk);
+  color: var(--text);
+  font-family: var(--font-canon);
+  font-size: var(--step-0);
+}
+
+.practice__note {
+  max-width: 48ch;
+  margin: var(--space-1) 0 var(--space-2);
+  color: var(--text-quiet);
+  font-size: var(--step--1);
+  line-height: 1.5;
+}
+
+.practice__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.practice__import {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.practice__import input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.practice__import:focus-within {
+  outline: 2px solid var(--bronze);
+  outline-offset: 4px;
+}
+
+.practice__result {
+  min-height: 1.2em;
+  margin: var(--space-1) 0 0;
+  color: var(--text-quiet);
+  font-size: var(--step--1);
+}
+
+.practice__footer {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+  margin-top: var(--space-4);
+}
+
+/* ------------------------------------------------------------------ method */
+
+.method {
+  font-family: var(--font-canon);
+}
+
+.method__lead,
+.method__claim p,
+.method__close,
+.method__limitations li {
+  max-width: 62ch;
+  color: var(--text);
+  font-size: var(--step-0);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.method__heading {
+  margin: var(--space-4) 0 var(--space-1);
+  color: var(--text);
+  font-size: var(--step-1);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.method__consequence {
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--bronze);
+  color: var(--text-quiet);
+  font-style: italic;
+}
+
+/*
+ * References set in the same face and size as a sutta reference. The app cites
+ * every passage back to a source the reader can check; this page does the same
+ * for its own behaviour (SPEC.md §7.3).
+ */
+.method__references {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.method__references li {
+  max-width: 62ch;
+  margin-bottom: var(--space-2);
+  color: var(--text-quiet);
+  font-size: var(--step--1);
+  line-height: 1.5;
+}
+
+.method__references a {
+  color: var(--bronze);
+}
+
+.method__limitations {
+  padding-left: var(--space-2);
+  color: var(--text);
+}
+
+.method__limitations li {
+  margin-bottom: var(--space-1);
+}
+
+.method__close {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+  margin-top: var(--space-4);
+  color: var(--text-quiet);
 }

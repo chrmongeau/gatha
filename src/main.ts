@@ -4,9 +4,22 @@ import './styles/base.css';
 import './styles/screens.css';
 import './styles/sitting.css';
 
-import { dayNumber, passageForDay, rerollFrom } from './corpus/daily';
+import { passageForDay, rerollFrom } from './corpus/daily';
 import { loadCorpus, loadDiscourse, type Corpus, type Passage } from './corpus/load';
 import { Views, type Screen } from './state';
+import { dayNumber } from './day';
+import { counts, hasSatOn } from './history/metrics';
+import {
+  addSession,
+  exportBackup,
+  importBackup,
+  loadAnchor,
+  loadSessions,
+  saveAnchor,
+  type SessionRecord as LoggedSession,
+} from './history/store';
+import { createMethodView } from './views/method';
+import { createPracticeView, reportResult } from './views/practice';
 import { createAudioEngine } from './timer/audio';
 import { bellDurationSeconds } from './timer/bell';
 import { systemClock } from './timer/clock';
@@ -32,6 +45,28 @@ let corpus: Corpus | null = null;
 let config: SessionConfig = loadPreferences(storage);
 /** The day's passage, or whatever a re-roll has landed on since. */
 let passageUid: string | null = null;
+let sessions: LoggedSession[] = loadSessions(storage);
+let anchor: string | null = loadAnchor(storage);
+
+const ANCHOR_ASKED_KEY = 'gatha.anchorAsked';
+
+/** Asked once, on a first run, however it is answered. */
+function anchorAsked(): boolean {
+  if (storage === null) return true;
+  try {
+    return storage.getItem(ANCHOR_ASKED_KEY) !== null;
+  } catch {
+    return true;
+  }
+}
+
+function markAnchorAsked(): void {
+  try {
+    storage?.setItem(ANCHOR_ASKED_KEY, '1');
+  } catch {
+    // Nothing to do about it.
+  }
+}
 
 void boot();
 
@@ -85,6 +120,14 @@ function showToday(): void {
   const view = createTodayView({
     passage,
     config,
+    satToday: hasSatOn(sessions, dayNumber(new Date())),
+    anchor,
+    askAnchor: !anchorAsked(),
+    onAnchorAnswer: (answer) => {
+      anchor = answer;
+      saveAnchor(answer, storage);
+      markAnchorAsked();
+    },
     onBegin: (chosen) => {
       config = chosen;
       savePreferences(config, storage);
@@ -103,6 +146,7 @@ function showToday(): void {
       const showing = currentPassage();
       if (showing !== null) void showDiscourse(showing, showToday);
     },
+    onPractice: showPractice,
   });
 
   if (resumable !== null) view.element.prepend(resumeBanner(resumable));
@@ -148,12 +192,70 @@ async function showDiscourse(passage: Passage, back: () => void): Promise<void> 
   }
 }
 
-function showAfter(passage: Passage): void {
+function showPractice(): void {
+  const view = createPracticeView({
+    sessions,
+    today: dayNumber(new Date()),
+    anchor,
+    onAnchorChange: (answer) => {
+      anchor = answer;
+      saveAnchor(answer, storage);
+      markAnchorAsked();
+    },
+    onExport: () => {
+      downloadBackup();
+      reportResult(view, 'Saved.');
+    },
+    onImport: (file) => {
+      void file.text().then(
+        (text) => {
+          try {
+            const result = importBackup(text, storage);
+            sessions = loadSessions(storage);
+            anchor = loadAnchor(storage);
+            reportResult(
+              view,
+              `Added ${String(result.added)}, already had ${String(result.alreadyHad)}.`,
+            );
+          } catch (error) {
+            reportResult(view, error instanceof Error ? error.message : 'That file could not be read.');
+          }
+        },
+        () => {
+          reportResult(view, 'That file could not be read.');
+        },
+      );
+    },
+    onMethod: showMethod,
+    onBack: showToday,
+  });
+  views.show(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
+}
+
+function showMethod(): void {
+  const view = createMethodView({ onBack: showPractice });
+  views.show(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
+}
+
+/** The only way a practice survives a cleared cache, so it is a plain file. */
+function downloadBackup(): void {
+  const now = new Date();
+  const blob = new Blob([exportBackup(storage, now)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `gatha-${now.toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function showAfter(passage: Passage, recorded: boolean): void {
   const view = createAfterView({
     passage,
+    recorded,
     onRead: () => {
       void showDiscourse(passage, () => {
-        showAfter(passage);
+        showAfter(passage, recorded);
       });
     },
     onDone: showToday,
@@ -179,6 +281,7 @@ function run(session: Session): void {
   const endEarly = (): void => {
     const at = session.elapsedMs;
     stop(at, true);
+    record(session, at);
     showToday();
   };
 
@@ -241,7 +344,8 @@ function run(session: Session): void {
 
     if (reading.finished) {
       stop(reading.elapsedMs, false);
-      if (passage !== null) showAfter(passage);
+      const logged = record(session, reading.elapsedMs);
+      if (passage !== null) showAfter(passage, logged);
       else showToday();
       return;
     }
@@ -263,6 +367,28 @@ function run(session: Session): void {
   views.show(view, view.element);
   view.update(first);
   frame = requestAnimationFrame(tick);
+}
+
+/**
+ * Write the sit to the log.
+ *
+ * The duration recorded is time actually sat, from the opening bell — not the
+ * length that was chosen. A sit ended early is still a sit, and one that reaches
+ * the floor counts as fully as one that ran to the closing bell.
+ */
+function record(session: Session, elapsedMs: number): boolean {
+  const sessionConfig = session.record.config;
+  const satMs = Math.max(0, Math.min(elapsedMs - sessionConfig.prepareMs, sessionConfig.durationMs));
+  if (satMs <= 0) return false;
+
+  const entry: LoggedSession = {
+    startedAt: session.record.startedAt,
+    durationMs: satMs,
+    completed: satMs >= sessionConfig.durationMs,
+    passageId: passageUid,
+  };
+  sessions = addSession(entry, storage);
+  return counts(entry);
 }
 
 /**

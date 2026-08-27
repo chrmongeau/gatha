@@ -11,8 +11,12 @@ import type { StorageLike } from './active-session';
 
 const KEY = 'gatha.preferences';
 
-/** Presets from SPEC.md §5. */
+/**
+ * Presets from SPEC.md §5, with the two-minute floor from §7 first in the row
+ * rather than tucked at the end. It is a first-class option, not a consolation.
+ */
 export const DURATION_PRESETS_MS: readonly number[] = [
+  2 * 60_000,
   5 * 60_000,
   10 * 60_000,
   15 * 60_000,

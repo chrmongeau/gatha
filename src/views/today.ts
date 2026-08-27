@@ -24,9 +24,17 @@ export interface TodayView {
 export interface TodayViewOptions {
   readonly passage: Passage;
   readonly config: SessionConfig;
+  /** False while today is still open, which is when the floor is worth stating. */
+  readonly satToday: boolean;
+  /** The sitter's own answer to "I'll sit after ___", if they gave one. */
+  readonly anchor: string | null;
+  /** True on a first run, when the anchor has not yet been asked for. */
+  readonly askAnchor: boolean;
+  readonly onAnchorAnswer: (anchor: string | null) => void;
   readonly onBegin: (config: SessionConfig) => void;
   readonly onReroll: () => void;
   readonly onRead: () => void;
+  readonly onPractice: () => void;
 }
 
 const MARKUP = `
@@ -47,9 +55,11 @@ const MARKUP = `
     </div>
     <div class="today__actions">
       <button type="button" class="action action--primary" data-role="begin">Begin</button>
+      <p class="today__floor" data-role="floor"></p>
       <div class="today__quiet">
         <button type="button" class="action action--quiet" data-role="reroll">Another passage</button>
         <button type="button" class="action action--quiet" data-role="read">Read the discourse</button>
+        <button type="button" class="action action--quiet" data-role="practice">Practice</button>
       </div>
     </div>
   </article>
@@ -74,6 +84,19 @@ export function createTodayView(options: TodayViewOptions): TodayView {
   showPassage(options.passage);
 
   let config = options.config;
+
+  // The floor is stated only while the day is open. Once a sit is recorded there
+  // is nothing to say: no tick, no praise, no remark on the day at all.
+  const floor = query(element, '[data-role="floor"]', HTMLElement);
+  if (options.satToday) {
+    floor.remove();
+  } else {
+    const lines = ['Two minutes counts.'];
+    if (options.anchor !== null) lines.push(`After ${options.anchor}.`);
+    floor.textContent = lines.join(' ');
+  }
+
+  if (options.askAnchor) element.prepend(anchorPrompt(options.onAnchorAnswer));
 
   const durations = query(element, '[data-role="durations"]', HTMLElement);
   const intervals = query(element, '[data-role="intervals"]', HTMLElement);
@@ -127,6 +150,8 @@ export function createTodayView(options: TodayViewOptions): TodayView {
   const begin = query(element, '[data-role="begin"]', HTMLButtonElement);
   const reroll = query(element, '[data-role="reroll"]', HTMLButtonElement);
   const read = query(element, '[data-role="read"]', HTMLButtonElement);
+  const practice = query(element, '[data-role="practice"]', HTMLButtonElement);
+  practice.addEventListener('click', options.onPractice);
 
   const onBegin = (): void => {
     options.onBegin(config);
@@ -151,9 +176,43 @@ export function createTodayView(options: TodayViewOptions): TodayView {
       begin.removeEventListener('click', onBegin);
       reroll.removeEventListener('click', options.onReroll);
       read.removeEventListener('click', options.onRead);
+      practice.removeEventListener('click', options.onPractice);
       element.remove();
     },
   };
+}
+
+/**
+ * Asked once, on a first run, and never again however it is answered. Specifying
+ * the cue in advance is the highest-leverage thing in the history system
+ * (SPEC.md §7) and the only thing the app requests.
+ */
+function anchorPrompt(onAnswer: (anchor: string | null) => void): HTMLElement {
+  const prompt = document.createElement('form');
+  prompt.className = 'anchor';
+  prompt.innerHTML = `
+    <label class="choice__legend" for="first-anchor">I’ll sit after</label>
+    <input class="practice__anchor" id="first-anchor" type="text" autocomplete="off"
+           placeholder="my morning coffee" />
+    <div class="practice__row">
+      <button type="submit" class="choice__button">Save</button>
+      <button type="button" class="action action--quiet" data-role="skip">Not now</button>
+    </div>
+  `;
+
+  const input = prompt.querySelector('input');
+  prompt.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const value = input?.value.trim() ?? '';
+    onAnswer(value === '' ? null : value);
+    prompt.remove();
+  });
+  prompt.querySelector('[data-role="skip"]')?.addEventListener('click', () => {
+    onAnswer(null);
+    prompt.remove();
+  });
+
+  return prompt;
 }
 
 interface Choice {

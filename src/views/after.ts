@@ -15,12 +15,15 @@ export interface AfterView {
 
 export interface AfterViewOptions {
   readonly passage: Passage;
+  /** Whether the sit reached the two-minute floor and went into the log. */
+  readonly recorded: boolean;
   readonly onRead: () => void;
   readonly onDone: () => void;
 }
 
 const MARKUP = `
   <article class="after">
+    <p class="after__recorded" data-role="recorded"></p>
     <div class="today__passage">
       <p class="passage" lang="en"></p>
       <p class="passage__source"></p>
@@ -38,6 +41,10 @@ export function createAfterView(options: AfterViewOptions): AfterView {
   const element = document.createElement('section');
   element.className = 'screen screen--after';
   element.innerHTML = MARKUP;
+
+  // Plain confirmation, no score and no congratulation (SPEC.md §4).
+  const recorded = query(element, '[data-role="recorded"]', HTMLElement);
+  recorded.textContent = options.recorded ? 'Recorded.' : 'Not recorded — under two minutes.';
 
   const passage = query(element, '.passage', HTMLElement);
   passage.textContent = options.passage.text;

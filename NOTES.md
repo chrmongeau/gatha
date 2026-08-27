@@ -432,3 +432,59 @@ deleted and is not shipped, exactly as §15 instructs.
   right in a dim room.
 - Whether any passage looks wrong. If one does, the fix is in the selection
   rules in `tools/build-corpus.mts` — never in the output.
+
+
+---
+
+## Phase 3 — History
+
+**Built**
+
+- `src/history/store.ts` — the session log, the if-then anchor, and export and
+  import as a JSON file. A record is `{ startedAt, durationMs, completed,
+  passageId }`.
+- `src/history/metrics.ts` — the floor, days in the last thirty, monotonic
+  totals, and the calendar.
+- `src/views/practice.ts` — the practice view.
+- `src/views/method.ts` — why the app counts what it counts (§7.3).
+- Today gained the two-minute preset, the floor line while a day is open, the
+  anchor, and a quiet way through to Practice. After now says whether the sit was
+  recorded.
+- The device-testing scaffolding is gone: the bell preview, the URL overrides
+  and the diagnostic log. The audio resync, the heartbeat and the thaw handler
+  stayed — those are recovery, not diagnostics.
+
+**Decisions SPEC.md did not cover**
+
+- *`metrics.ts`, not `streak.ts`.* §13 names the file `streak.ts`, and §7 spends
+  a page explaining why there is no streak. A file called that invites someone
+  to add one. The name is the only deviation from the layout.
+- *`src/day.ts`.* Two unrelated things need the same "today": which passage the
+  day shows, and which day a sit belongs to. If they disagreed a sit at 00:30
+  could land on the previous day's square.
+- *What is recorded is time actually sat*, from the opening bell, not the length
+  that was chosen. A sit ended early is still a sit. `completed` records whether
+  it reached the closing bell, and nothing in the interface treats it as better.
+- *Sits under the floor are stored but do not count.* They stay in the log and in
+  an export because they happened; they light no square and move no number.
+- *Import merges, never replaces.* Restoring a backup onto a phone that has been
+  sat on since must not delete the sits made in between. Deduplicated on
+  `startedAt`, and an anchor already answered is not overwritten.
+- *The anchor is asked once*, on a first run, and never again however it is
+  answered — including when it is skipped. `gatha.anchorAsked` records that the
+  question was put, separately from the answer.
+
+**Held to §7's "what not to build"**
+
+No consecutive-day counter anywhere. No red, and nothing that could read as a
+warning: a day not sat is drawn no differently from the ground it sits on, so
+gaps read as texture. No badges, no milestones, no celebration at any threshold,
+no notifications, no goal-setting UI. A browser check asserts none of "streak",
+"lost", "broken", "congrat" appears on the practice screen.
+
+**Needs human verification**
+
+- Whether the practice screen reads as calm rather than as a dashboard.
+- Whether returning after a gap genuinely feels ordinary. That is the thing §7 is
+  built around and the one thing a test cannot check.
+- Whether the Method page reads as showing the work rather than as marketing.

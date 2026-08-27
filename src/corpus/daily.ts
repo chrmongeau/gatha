@@ -9,11 +9,7 @@
  * session model does.
  */
 
-/** Days since the epoch, in the viewer's own timezone rather than UTC. */
-export function dayNumber(at: Date): number {
-  const local = new Date(at.getFullYear(), at.getMonth(), at.getDate());
-  return Math.floor(local.getTime() / 86_400_000);
-}
+export { dayNumber } from '../day';
 
 /** The passage id for a day. Null only when the corpus is empty. */
 export function passageForDay(order: readonly string[], day: number): string | null {
