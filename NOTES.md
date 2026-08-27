@@ -669,3 +669,62 @@ it is ever wanted, it needs a `--text-faint` with room in it first.
 The measuring script is not kept. It is four lines of luminance maths against
 `getComputedStyle`, easier to rewrite than to maintain, and a previous version of
 it had a bug that the product code never had.
+
+---
+
+## Phase 5 — PWA and offline
+
+**No Workbox.** Section 2 rules out runtime dependencies, and what section 10
+asks for is a precache, a stale-while-revalidate, and an update rule. That is
+roughly 120 lines of worker; the library would have been more code than the
+thing it replaced. `src/sw/routes.ts` holds every decision as pure functions and
+is unit-tested; `src/sw/service-worker.ts` is the adapter over it and touches no
+logic of its own.
+
+**Built, not hand-maintained.** A plugin in `vite.config.ts` compiles the worker
+with esbuild — which ships inside Vite, so it costs nothing — after the rest of
+the build is written, and fills in the precache list from what was actually
+emitted. Twelve files: the shell, both font subsets, the JS and CSS, the icons,
+the manifest, `order.json` and `passages.json`. Not the 673 discourses and three
+megabytes; those are kept as they are read.
+
+**The version is hashed over file contents, not names.** The first cut hashed the
+list of URLs, on the reasoning that every asset filename carries a content hash
+already. `index.html` does not. Adding the iOS meta tags produced a byte-different
+shell and an identical worker version — and since the shell is served cache-first,
+that change would have been permanently unreachable for anyone who had already
+visited. Caught because the build printed the same version twice in a row.
+
+**Updates never land mid-sit.** The worker never calls `skipWaiting()` on its own.
+A new version installs and waits; `src/pwa.ts` holds it, and `main.ts` hands over
+only when the app becomes visible, on Today, with no session running — where a
+reload costs nothing and nobody is looking. If that moment never comes the update
+applies at the next cold start anyway, which is the default behaviour.
+
+**Icons are drawn in code.** `tools/build-icons.mts` writes four PNGs with a
+hand-rolled encoder over `node:zlib` — about fifty lines — rather than putting an
+image library back into a project that had just got rid of one. The mark is the
+app's own: the incised line, cut from the left as far as a sit has got, with one
+interval bell behind and one ahead. Everything sits inside the middle 60%, so a
+maskable crop takes nothing.
+
+**Verified in a browser, not asserted.** Chromium with the network switched off:
+
+- Cold load offline renders Today from the cache, with no failed requests.
+- A discourse read while online opens offline afterwards.
+- A full two-minute sit ran offline start to finish and was recorded:
+  `{"durationMs":120000,"completed":true,"passageId":"dhp253"}`, with the
+  active-session key cleared after.
+- A mid-sit reload while offline comes back with the resume offer intact.
+- With an update waiting, backgrounding and returning **mid-sit** leaves the sit
+  running and the old worker in control; doing the same on Today hands over,
+  reloads, and drops the old cache.
+
+**Needs a device.** Everything above is Chromium on a desktop. What is unproven:
+that the install prompt appears and the icon looks right on the home screen; that
+iOS treats it as a standalone app; and that a sit started from the installed app
+with no network behaves as it does in a tab.
+
+**Not built.** No update toast, no offline banner, no "new version available"
+prompt. The app is silent about all of it by design — section 7's argument
+against notifications applies just as well to the app talking about itself.

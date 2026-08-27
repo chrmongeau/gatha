@@ -718,13 +718,19 @@ Build to this without announcing it in the UI.
 gatha/
 ├── .github/workflows/deploy.yml
 ├── tools/
-│   └── build-corpus.mts        # bilara-data → public/corpus
+│   ├── build-corpus.mts        # bilara-data → public/corpus
+│   └── build-icons.mts         # the app icon, drawn in code
 ├── public/
 │   ├── corpus/
+│   ├── icons/
 │   └── manifest.webmanifest
 ├── src/
 │   ├── main.ts
 │   ├── state.ts                # view state machine
+│   ├── pwa.ts                  # registration, and when an update may take over
+│   ├── sw/
+│   │   ├── routes.ts           # which request gets which strategy
+│   │   └── service-worker.ts   # built to dist/sw.js by vite.config.ts
 │   ├── timer/
 │   │   ├── session.ts          # wall-clock session model
 │   │   ├── bell.ts             # additive synthesis

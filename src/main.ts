@@ -37,10 +37,49 @@ import { createAfterView } from './views/after';
 import { createDiscourseView } from './views/discourse';
 import { createSittingView } from './views/sitting';
 import { createTodayView, type TodayView } from './views/today';
+import { registerServiceWorker } from './pwa';
 import { query } from './views/dom';
 
 const storage = defaultStorage();
 const views = new Views(query(document, '#app', HTMLElement));
+
+/*
+ * Offline is the expected case, not an edge case: someone sits at six in the
+ * morning on airplane mode (SPEC.md §10). Registered here and asked for its
+ * opinion only when the app is idle — see applyUpdateWhenIdle below.
+ */
+const serviceWorker = registerServiceWorker(import.meta.env.BASE_URL);
+
+/** True from the opening bell to the closing one. Nothing reloads while it is. */
+let sitting = false;
+/** True while Today is the visible screen: the one screen a reload costs nothing. */
+let onToday = false;
+
+/**
+ * Swap the screen, and remember whether it was Today.
+ *
+ * Views itself is deliberately ignorant of which screen is which; this is the
+ * one caller that needs to know, so the knowledge lives here rather than there.
+ */
+function present(screen: Screen, focus?: HTMLElement | null, isToday = false): void {
+  onToday = isToday;
+  views.show(screen, focus);
+}
+
+/**
+ * Hand over to a waiting service worker, but only on Today, only between sits,
+ * and only when the app has just come back into view — so the reload happens
+ * where nothing is lost and nobody is looking (SPEC.md §10). Otherwise it waits,
+ * which is the default behaviour and costs nothing: the new version takes over
+ * the next time the app is opened from cold.
+ */
+function applyUpdateWhenIdle(): void {
+  if (document.visibilityState !== 'visible') return;
+  if (sitting || !onToday) return;
+  if (serviceWorker.updateReady()) serviceWorker.applyUpdate();
+}
+
+document.addEventListener('visibilitychange', applyUpdateWhenIdle);
 
 let corpus: Corpus | null = null;
 let config: SessionConfig = loadPreferences(storage);
@@ -81,7 +120,7 @@ async function boot(): Promise<void> {
     corpus = await loadCorpus();
   } catch {
     settled();
-    views.show(
+    present(
       message(
         'The passages could not be loaded. They are stored with the app, so this is usually a connection that dropped mid-download.',
       ),
@@ -100,7 +139,7 @@ async function boot(): Promise<void> {
  */
 function pending(): () => void {
   const timer = window.setTimeout(() => {
-    views.show(message('…'));
+    present(message('…'));
   }, 400);
   return () => {
     clearTimeout(timer);
@@ -117,7 +156,7 @@ let today: TodayView | null = null;
 function showToday(): void {
   const passage = currentPassage();
   if (passage === null) {
-    views.show(message('No passage for today.'));
+    present(message('No passage for today.'));
     return;
   }
 
@@ -156,7 +195,7 @@ function showToday(): void {
 
   if (resumable !== null) view.element.prepend(resumeBanner(resumable));
   today = view;
-  views.show(view, view.element.querySelector<HTMLElement>('[data-role="begin"]'));
+  present(view, view.element.querySelector<HTMLElement>('[data-role="begin"]'), true);
 }
 
 /** A stored session is only worth offering while it is still running. */
@@ -190,10 +229,10 @@ async function showDiscourse(passage: Passage, back: () => void): Promise<void> 
     const discourse = await loadDiscourse(passage.parentUid);
     settled();
     const view = createDiscourseView({ discourse, onBack: back });
-    views.show(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
+    present(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
   } catch {
     settled();
-    views.show(message('That discourse could not be loaded.'));
+    present(message('That discourse could not be loaded.'));
   }
 }
 
@@ -240,12 +279,12 @@ function showPractice(): void {
     onMethod: showMethod,
     onBack: showToday,
   });
-  views.show(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
+  present(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
 }
 
 function showMethod(): void {
   const view = createMethodView({ onBack: showPractice });
-  views.show(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
+  present(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
 }
 
 /** The only way a practice survives a cleared cache, so it is a plain file. */
@@ -271,7 +310,7 @@ function showAfter(passage: Passage, recorded: boolean): void {
     },
     onDone: showToday,
   });
-  views.show(view, view.element.querySelector<HTMLElement>('[data-role="read"]'));
+  present(view, view.element.querySelector<HTMLElement>('[data-role="read"]'));
 }
 
 /**
@@ -283,6 +322,7 @@ function showAfter(passage: Passage, recorded: boolean): void {
  */
 function run(session: Session): void {
   const sessionConfig = session.record.config;
+  sitting = true;
   if (storage !== null) saveActiveSession(session.record, storage);
 
   const first = session.read();
@@ -339,6 +379,7 @@ function run(session: Session): void {
   const stop = (elapsedMs: number, immediate: boolean): void => {
     if (!running) return;
     running = false;
+    sitting = false;
     cancelAnimationFrame(frame);
     clearInterval(heartbeat);
     document.removeEventListener('visibilitychange', onVisibilityChange);
@@ -375,7 +416,7 @@ function run(session: Session): void {
   // always follow with a visibilitychange.
   document.addEventListener('resume', onResume);
 
-  views.show(view, view.element);
+  present(view, view.element);
   view.update(first);
   frame = requestAnimationFrame(tick);
 }

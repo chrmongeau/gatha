@@ -3,9 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    
+
     <meta name="theme-color" content="#121511" />
     <title>Gatha</title>
+    <!--
+      Relative, so they resolve against the base path GitHub Pages serves from
+      rather than the domain root (SPEC.md section 2). The manifest's own
+      start_url and scope are relative for the same reason.
+    -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <!-- iOS reads the manifest only from 16.4; these keep an older home-screen install honest. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Gatha" />
+    <link rel="icon" href="icons/icon-48.png" sizes="48x48" type="image/png" />
+    <link rel="apple-touch-icon" href="icons/icon-180.png" />
     <script>
       /*
        * Before first paint, or a light reader gets a dark flash on every load.
