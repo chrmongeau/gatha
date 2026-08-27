@@ -295,40 +295,6 @@
   line-height: 1.5;
 }
 
-/* ------------------------------------------------- scaffolding, phase 1 only */
-
-.scaffold {
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--hairline);
-}
-
-.scaffold__label {
-  margin: 0 0 var(--space-1);
-  color: var(--text-faint);
-  font-size: var(--step--1);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.scaffold__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.scaffold__text {
-  max-height: 40vh;
-  padding: var(--space-2);
-  border: 1px solid var(--hairline);
-  margin: var(--space-1) 0 0;
-  color: var(--text-quiet);
-  font-size: 0.6875rem;
-  line-height: 1.45;
-  overflow-x: auto;
-  -webkit-user-select: all;
-  user-select: all;
-}
-
 /* A re-roll changes only the passage, and only the passage fades for it. */
 .today__passage.is-changing {
   animation: passage-in var(--fade) ease both;

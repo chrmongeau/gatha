@@ -27,8 +27,6 @@ export interface TodayViewOptions {
   readonly onBegin: (config: SessionConfig) => void;
   readonly onReroll: () => void;
   readonly onRead: () => void;
-  /** Rendered under the actions while the timer is still being verified. */
-  readonly extras?: HTMLElement;
 }
 
 const MARKUP = `
@@ -136,8 +134,6 @@ export function createTodayView(options: TodayViewOptions): TodayView {
   begin.addEventListener('click', onBegin);
   reroll.addEventListener('click', options.onReroll);
   read.addEventListener('click', options.onRead);
-
-  if (options.extras !== undefined) query(element, '.today', HTMLElement).append(options.extras);
 
   return {
     element,
