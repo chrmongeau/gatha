@@ -88,9 +88,19 @@ comes back clean — everything after it is decoration on a timer that has to wo
 - Commit per logical change with a plain-English subject. No emoji, no
   `feat(scope):` prefixes.
 - **Commits are authored by the repository owner, with Claude as co-author.**
-  Set `user.name` to `chrmongeau` and `user.email` to the owner's address, and
-  end the message with a `Co-Authored-By: Claude <noreply@anthropic.com>`
-  trailer. GitHub's contributor list should show the owner, not the assistant.
+  Set exactly this, and end the message with a
+  `Co-Authored-By: Claude <noreply@anthropic.com>` trailer:
+
+  ```
+  git config user.name  "Christian Mongeau"
+  git config user.email "10231857+chrmongeau@users.noreply.github.com"
+  ```
+
+  **Never use the owner's personal email address in a commit, anywhere.** The
+  account has email privacy enabled on GitHub and this repository is public; the
+  `users.noreply.github.com` address above is the only one that goes into the
+  history. The address in the environment's user profile is for identifying the
+  owner, not for publishing.
 - **Never put a session URL, a chat link, or a model name in a commit message**,
   a PR, a code comment, or anything else that lands in the repository. They mean
   nothing to a future reader and they do not belong in the history.
