@@ -1,0 +1,26 @@
+BSD Zero Clause License
+
+Copyright (c) 2026 Christian Mongeau
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+
+This covers the software in this repository. Two other things are distributed
+here under their own terms, and this licence does not alter either:
+
+  The canonical text under public/corpus/ is from SuttaCentral's bilara-data,
+  translated by Bhikkhu Sujato and dedicated to the public domain under CC0.
+  https://github.com/suttacentral/bilara-data
+
+  The fonts under src/styles/fonts/ are Gentium Plus, copyright SIL
+  International, under the SIL Open Font License 1.1. The licence travels with
+  them, in src/styles/fonts/OFL.txt.

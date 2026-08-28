@@ -816,3 +816,42 @@ and it is parked until the app has been used for a week.
 storage but reported as "not recorded" and filtered out of every view. Harmless —
 it never surfaces — but those rows accumulate in the log and in exported backups
 for good.
+
+---
+
+## A README, and the licences
+
+Asked whether the missing README was deliberate. It was not — §13's file layout
+never listed one, so it never got built and never got raised. Three documents at
+the root, all addressed to whoever is building the thing, and nothing for someone
+who just wants to know what it is.
+
+The more important find was next to it. The repository is public and redistributes
+two things that are not its own:
+
+- **Gentium Plus**, which is SIL's, under the Open Font License. The OFL asks
+  that the licence accompany the font wherever it is redistributed, and there was
+  no copy of it here. There is now, beside the fonts. The deployed site also
+  redistributes them — every visitor is served the WOFF2 — so `vite.config.ts`
+  copies the licence into the build as well.
+- **bilara-data**, which is CC0 and carries no obligation. The app credits Sujato
+  and SuttaCentral anyway, per §3, and the README says where the text comes from.
+
+Verified rather than typed from memory, which for licence text matters more than
+usual: the copyright and version were read out of the shipped WOFF2 binaries
+themselves (`Copyright (c) 2003-2022 SIL International`, Gentium Plus 6.101), the
+OFL body was compared across three independent copies and is byte-identical, and
+the 0BSD text was checked against both SPDX and choosealicense.
+
+**The code is 0BSD**, chosen over MIT and over CC0 itself. The brief was "most
+liberal, in the spirit of the CC0 on the text". CC0 is a public-domain dedication
+written for content rather than software — the OSI declined to approve it, partly
+over its explicit non-grant of patent rights, and tooling handles it unevenly for
+code. 0BSD is MIT with the attribution condition deleted: OSI-approved, properly
+drafted for software, and its SPDX record lists no conditions at all. It is one
+file to change if that ever looks wrong.
+
+Also corrected three stale entries in §13's layout while there: `streak.ts`,
+which was deliberately renamed `metrics.ts` in phase 3 and whose old name invites
+exactly the feature §7 rules out; a missing `storage.ts`; and `tts/` marked phase
+2 when it is phase 6.

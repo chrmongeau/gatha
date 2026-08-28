@@ -716,6 +716,8 @@ Build to this without announcing it in the UI.
 
 ```
 gatha/
+├── README.md
+├── LICENSE
 ├── .github/workflows/deploy.yml
 ├── tools/
 │   ├── build-corpus.mts        # bilara-data → public/corpus
@@ -727,6 +729,7 @@ gatha/
 ├── src/
 │   ├── main.ts
 │   ├── state.ts                # view state machine
+│   ├── storage.ts              # every read and write of local storage
 │   ├── pwa.ts                  # registration, and when an update may take over
 │   ├── sw/
 │   │   ├── routes.ts           # which request gets which strategy
@@ -740,15 +743,16 @@ gatha/
 │   │   └── load.ts
 │   ├── history/
 │   │   ├── store.ts
-│   │   └── streak.ts
+│   │   └── metrics.ts          # not streak.ts, and §7 explains why
 │   ├── views/
 │   │   ├── today.ts
 │   │   ├── sitting.ts
 │   │   ├── after.ts
 │   │   ├── discourse.ts
 │   │   └── practice.ts
-│   ├── tts/                    # phase 2
+│   ├── tts/                    # phase 6, if it is built at all
 │   └── styles/
+│       └── fonts/              # subsets, with the OFL beside them
 ├── SPEC.md
 └── vite.config.ts
 ```

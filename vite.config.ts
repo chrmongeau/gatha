@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, posix, relative, sep } from 'node:path';
 import { build } from 'esbuild';
 import { defineConfig, type Plugin } from 'vite';
@@ -12,12 +12,30 @@ export default defineConfig({
   build: {
     target: 'es2022',
   },
-  plugins: [serviceWorker()],
+  plugins: [fontLicence(), serviceWorker()],
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
   },
 });
+
+/**
+ * The Open Font License travels with the font it covers.
+ *
+ * The deployed site serves the Gentium Plus subsets to every visitor, which is
+ * redistribution, and the OFL asks that each copy carry the licence. In the
+ * repository it sits beside the fonts in src/styles/fonts/; Vite would not emit
+ * it, because nothing imports it, so it is copied to the root of the build.
+ */
+function fontLicence(): Plugin {
+  return {
+    name: 'gatha-font-licence',
+    apply: 'build',
+    closeBundle() {
+      copyFileSync('src/styles/fonts/OFL.txt', join('dist', 'OFL.txt'));
+    },
+  };
+}
 
 /**
  * What goes into the cache at install time: the shell, the fonts, and the two
