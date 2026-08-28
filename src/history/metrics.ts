@@ -36,12 +36,12 @@ export function counts(session: SessionRecord): boolean {
   return session.durationMs >= FLOOR_MS;
 }
 
-export function dayOf(session: SessionRecord): number {
+function dayOf(session: SessionRecord): number {
   return dayNumber(new Date(session.startedAt));
 }
 
 /** Every day with a qualifying session, and how much was sat on it. */
-export function byDay(sessions: readonly SessionRecord[]): Map<number, DaySummary> {
+function byDay(sessions: readonly SessionRecord[]): Map<number, DaySummary> {
   const days = new Map<number, DaySummary>();
   for (const session of sessions) {
     if (!counts(session)) continue;

@@ -19,8 +19,6 @@ interface MediaSessionLike {
 }
 
 export interface AudioEngineOptions {
-  /** Overall bell volume, 0 to 1. */
-  readonly volume?: number;
   /** Shown on the lock screen while the session runs. */
   readonly nowPlaying?: { readonly title: string; readonly artist: string };
   /** Called if the listener ends the sit from the lock screen. */
@@ -28,7 +26,7 @@ export interface AudioEngineOptions {
 }
 
 export interface AudioEngine {
-  /** The context's state, for the diagnostic log. 'closed' once shut down. */
+  /** The context's state. 'closed' once shut down; watched by the heartbeat. */
   readonly state: string;
   /**
    * Schedule every bell at or after `elapsedMs`, measured from the session's
@@ -79,7 +77,6 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
   let origin: number | null = null;
 
   const place = (bells: readonly ScheduledBell[], elapsedMs: number): void => {
-    const volume = options.volume ?? 1;
     // Offsets are relative to the session start; anchor them to the audio clock.
     origin = ctx.currentTime - elapsedMs / 1000;
     for (const bell of bells) {
@@ -89,7 +86,7 @@ export function createAudioEngine(options: AudioEngineOptions = {}): AudioEngine
       const at = Math.max(when, ctx.currentTime);
       const gain = ctx.createGain();
       gain.connect(master);
-      scheduleBell(ctx, at, bell.kind, { destination: gain, volume });
+      scheduleBell(ctx, at, bell.kind, { destination: gain });
       placed.push({ when: at, gain });
     }
   };

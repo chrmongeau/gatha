@@ -9,8 +9,6 @@
  * session model does.
  */
 
-export { dayNumber } from '../day';
-
 /** The passage id for a day. Null only when the corpus is empty. */
 export function passageForDay(order: readonly string[], day: number): string | null {
   if (order.length === 0) return null;

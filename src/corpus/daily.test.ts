@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { dayNumber, passageForDay, rerollFrom } from './daily';
+import { dayNumber } from '../day';
+import { passageForDay, rerollFrom } from './daily';
 
 const ORDER = ['a', 'b', 'c', 'd'];
 

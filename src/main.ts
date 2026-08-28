@@ -136,8 +136,6 @@ function currentPassage(): Passage | null {
   return corpus.passages.get(passageUid) ?? null;
 }
 
-let today: TodayView | null = null;
-
 function showToday(): void {
   const passage = currentPassage();
   if (passage === null) {
@@ -146,7 +144,11 @@ function showToday(): void {
   }
 
   const resumable = findResumableSession();
-  const view = createTodayView({
+  // Held by the re-roll callback, which is built before the view it swaps the
+  // passage on. Scoped to this screen, so the last one is not kept after the
+  // app has moved on somewhere else.
+  let view: TodayView | null = null;
+  view = createTodayView({
     passage,
     config,
     satToday: hasSatOn(sessions, dayNumber(new Date())),
@@ -162,7 +164,7 @@ function showToday(): void {
       if (corpus === null || passageUid === null) return;
       passageUid = rerollFrom(corpus.order, passageUid);
       const next = currentPassage();
-      if (next !== null) today?.showPassage(next);
+      if (next !== null) view?.showPassage(next);
     },
     onRead: () => {
       // Read at click time, not captured: a re-roll changes the passage in
@@ -175,7 +177,6 @@ function showToday(): void {
   });
 
   if (resumable !== null) view.element.prepend(resumeBanner(resumable));
-  today = view;
   present(view, view.element.querySelector<HTMLElement>('[data-role="begin"]'), true);
 }
 

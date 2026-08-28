@@ -91,7 +91,7 @@ export function progressAt(config: SessionConfig, elapsedMs: number): number {
   return clamp(intoSilence / config.durationMs, 0, 1);
 }
 
-export function sittingMsAt(config: SessionConfig, elapsedMs: number): number {
+function sittingMsAt(config: SessionConfig, elapsedMs: number): number {
   return clamp(elapsedMs - config.prepareMs, 0, config.durationMs);
 }
 

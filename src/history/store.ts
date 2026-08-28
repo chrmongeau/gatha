@@ -23,7 +23,7 @@ export interface SessionRecord {
   readonly passageId: string | null;
 }
 
-export interface Backup {
+interface Backup {
   readonly version: number;
   readonly exported: string;
   readonly sessions: readonly SessionRecord[];

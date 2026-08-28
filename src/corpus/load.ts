@@ -41,7 +41,7 @@ export interface Corpus {
   readonly passages: ReadonlyMap<string, Passage>;
 }
 
-export function corpusUrl(path: string): string {
+function corpusUrl(path: string): string {
   return `${import.meta.env.BASE_URL}corpus/${path}`;
 }
 
