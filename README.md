@@ -8,46 +8,46 @@ closes by offering the whole discourse it came from.
 ## What it does
 
 One screen, one job: help someone sit, daily, with a text worth carrying into
-the silence. A session has three beats.
+the silence. A session has three parts, and their order is deliberate.
 
-**Passage.** A short canonical extract, readable in under a minute, chosen by
-the day so it is the same on every device and does not repeat until the corpus
-is exhausted.
+**Passage.** A short canonical extract, readable in under a minute. The date
+decides which one, so it is the same on every device, and no passage comes round
+again until every other one has been shown.
 
 **Silence.** A timer with a bell at the start, at chosen intervals, and at the
-end. The Sitting screen shows no numbers — a countdown invites clock-watching,
-which is the opposite of the intended state. Instead a single hairline fills
-across the screen, with notches cut into it where the interval bells fall, so
-the shape of the sit is legible at a glance without any digit being readable as
-time remaining. Elapsed time is there on a tap, for anyone who wants it.
+end. The sitting screen shows no numbers: a countdown invites clock-watching,
+which is the opposite of what a sit is for. Instead a single thin line fills
+from left to right as the session runs, with small notches cut into it where the
+interval bells fall — so you can see how far along you are at a glance, with no
+number to count down. Elapsed time is there on a tap, for anyone who wants it.
 
-**Expansion.** After the bell, the full discourse the passage came from,
-available but never insisted on. The ordering is deliberate: a long text opened
-thirty seconds before closing your eyes generates exactly the discursive
-thinking the sit is meant to settle.
+**Discourse.** After the closing bell, the full text the passage came from,
+offered but never insisted on. It comes last on purpose: a long text opened
+thirty seconds before closing your eyes starts exactly the kind of thinking the
+sit is meant to settle.
 
 It works offline after first load, installs to a home screen, and keeps
-everything on the device. There is no account, no backend, and no network call
-the user did not initiate.
+everything on the device. There is no account, nothing kept on a server, and no
+network request you did not ask for.
 
 ## What it does not do
 
-No streak. The practice view counts days sat in the last thirty, hours
-accumulated, and days practised — three numbers that only ever rise and that no
-single missed day can break. The app has a page explaining why, with the
-research it rests on and the places that research does not reach.
+No streak. The practice view shows days sat in the last thirty, days practised,
+and hours sat — three numbers that only ever rise, and that no single missed day
+can break. The app has a page explaining why, with the research it rests on and
+what that research does not cover.
 
 No notifications, no badges, no celebration, no analytics.
 
 ## The text
 
-Every word of Pali or translated sutta comes from
+Every word of translated sutta comes from
 [SuttaCentral's bilara-data](https://github.com/suttacentral/bilara-data),
 translated by Bhikkhu Sujato and dedicated to the public domain under CC0.
-Nothing in this repository writes, paraphrases, edits or repairs canonical
-text; the extraction script selects passages and copies them verbatim, and the
-app renders them with `textContent` and never as markup. If a passage looks
-wrong, the fix belongs in the selection rules, never in the output.
+Nothing in this repository writes, paraphrases or edits canonical text: the
+extraction script copies passages out word for word, and the app displays them
+as plain text, never as markup. If a passage looks wrong, the fix belongs in the
+rules that choose it, never in the text itself.
 
 ## Running it
 
@@ -62,21 +62,21 @@ Everything that has to pass before a change is finished:
 npm run typecheck     # tsc --noEmit, strict
 npm run lint
 npm run test
-npm run build         # must succeed with base: '/gatha/'
-npm run preview       # then check it loads at the subpath
+npm run build
+npm run preview       # then check it loads at /gatha/
 ```
 
 The corpus in `public/corpus/` is generated and committed, so a fresh clone
-needs nothing to run. Rebuilding it is a separate, deliberate step — it makes a
-shallow sparse clone of bilara-data into `.cache/`, which is not committed:
+needs nothing else to run. Rebuilding it is a separate, deliberate step: it
+clones the part of bilara-data it needs into `.cache/`, which is not committed.
 
 ```
 npm run corpus                                    # en, translated by Sujato
 npm run corpus -- --lang de --translator sabbamitta
 ```
 
-`npm run icons` redraws the app icon, which is generated from code rather than
-committed as an image somebody would have to trust.
+`npm run icons` redraws the app icon, which is drawn by a script rather than
+kept as an image file.
 
 ## Reading further
 
@@ -89,12 +89,12 @@ be wrong. `CLAUDE.md` is the working agreement for building it.
 ## Licence
 
 The software here is under the [BSD Zero Clause License](LICENSE) — the same
-spirit as the CC0 on the text it serves: use it for anything, with no
-conditions at all, not even keeping the notice.
+spirit as the CC0 on the text it serves: use it for anything, with no conditions
+at all, not even keeping the notice.
 
 Two things distributed here keep their own terms. The canonical text under
 `public/corpus/` is CC0, from bilara-data. The fonts under `src/styles/fonts/`
 are Gentium Plus, copyright SIL International, under the
 [SIL Open Font License 1.1](src/styles/fonts/OFL.txt) — chosen because the
-translations are dense with Pali set in full diacritics, and most faces drop
-them mid-word.
+translations are full of Pali words written with their diacritics, and most
+typefaces have no glyphs for them and silently drop them mid-word.
