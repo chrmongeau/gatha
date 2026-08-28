@@ -1,5 +1,5 @@
+import { readJson, writeJson, type StorageLike } from '../storage';
 import type { SessionConfig } from './session';
-import type { StorageLike } from './active-session';
 
 /**
  * The duration and interval the sitter last chose.
@@ -66,29 +66,11 @@ export function withDuration(config: SessionConfig, durationMs: number): Session
 }
 
 export function loadPreferences(storage: StorageLike | null): SessionConfig {
-  if (storage === null) return DEFAULT_CONFIG;
-  let raw: string | null;
-  try {
-    raw = storage.getItem(KEY);
-  } catch {
-    return DEFAULT_CONFIG;
-  }
-  if (raw === null) return DEFAULT_CONFIG;
-
-  try {
-    return parse(JSON.parse(raw)) ?? DEFAULT_CONFIG;
-  } catch {
-    return DEFAULT_CONFIG;
-  }
+  return readJson(storage, KEY, parse, DEFAULT_CONFIG);
 }
 
 export function savePreferences(config: SessionConfig, storage: StorageLike | null): void {
-  if (storage === null) return;
-  try {
-    storage.setItem(KEY, JSON.stringify({ durationMs: config.durationMs, intervalMs: config.intervalMs }));
-  } catch {
-    // Private mode, or a full quota. The session still runs.
-  }
+  writeJson(storage, KEY, { durationMs: config.durationMs, intervalMs: config.intervalMs });
 }
 
 /** Only the two the sitter chooses are stored; the rest stay as the app decides. */

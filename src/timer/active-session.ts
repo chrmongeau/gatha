@@ -1,3 +1,4 @@
+import { readJson, removeStored, writeJson, type StorageLike } from '../storage';
 import type { SessionConfig, SessionRecord } from './session';
 
 /**
@@ -11,53 +12,18 @@ import type { SessionConfig, SessionRecord } from './session';
 
 const KEY = 'gatha.activeSession';
 
-/** The narrow slice of the Storage API used here, so tests need no DOM. */
-export interface StorageLike {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
+/** Resuming is a convenience, not the session: a failed write costs nothing. */
+export function saveActiveSession(record: SessionRecord, storage: StorageLike | null): void {
+  writeJson(storage, KEY, record);
 }
 
-export function saveActiveSession(record: SessionRecord, storage: StorageLike): void {
-  try {
-    storage.setItem(KEY, JSON.stringify(record));
-  } catch {
-    // Private mode, or a full quota. Resuming is a convenience, not the session.
-  }
-}
-
-export function clearActiveSession(storage: StorageLike): void {
-  try {
-    storage.removeItem(KEY);
-  } catch {
-    // Nothing to do about it.
-  }
+export function clearActiveSession(storage: StorageLike | null): void {
+  removeStored(storage, KEY);
 }
 
 /** Null if there is nothing stored, or if what is stored is not a session. */
-export function loadActiveSession(storage: StorageLike): SessionRecord | null {
-  let raw: string | null;
-  try {
-    raw = storage.getItem(KEY);
-  } catch {
-    return null;
-  }
-  if (raw === null) return null;
-
-  try {
-    return parseRecord(JSON.parse(raw));
-  } catch {
-    return null;
-  }
-}
-
-export function defaultStorage(): StorageLike | null {
-  try {
-    return globalThis.localStorage;
-  } catch {
-    // Blocked by the browser's storage settings.
-    return null;
-  }
+export function loadActiveSession(storage: StorageLike | null): SessionRecord | null {
+  return readJson(storage, KEY, parseRecord, null);
 }
 
 function parseRecord(value: unknown): SessionRecord | null {

@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  clearActiveSession,
-  loadActiveSession,
-  saveActiveSession,
-  type StorageLike,
-} from './active-session';
+import { clearActiveSession, loadActiveSession, saveActiveSession } from './active-session';
+import type { StorageLike } from '../storage';
 import { Session, type SessionConfig } from './session';
 import { TestClock } from './test-clock';
 

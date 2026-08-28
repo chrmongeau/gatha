@@ -9,7 +9,7 @@ import {
   saveAnchor,
   type SessionRecord,
 } from './store';
-import type { StorageLike } from '../timer/active-session';
+import type { StorageLike } from '../storage';
 
 class MemoryStorage implements StorageLike {
   readonly items = new Map<string, string>();

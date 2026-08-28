@@ -1,4 +1,4 @@
-import type { StorageLike } from './timer/active-session';
+import { readText, writeText, type StorageLike } from './storage';
 
 /**
  * Dark or light.
@@ -24,21 +24,12 @@ export function resolveTheme(preference: ThemePreference, prefersLight: boolean)
 }
 
 export function loadPreference(storage: StorageLike | null): ThemePreference {
-  if (storage === null) return 'dark';
-  try {
-    const raw = storage.getItem(KEY);
-    return raw === 'light' || raw === 'system' || raw === 'dark' ? raw : 'dark';
-  } catch {
-    return 'dark';
-  }
+  const raw = readText(storage, KEY);
+  return raw === 'light' || raw === 'system' || raw === 'dark' ? raw : 'dark';
 }
 
 export function savePreference(preference: ThemePreference, storage: StorageLike | null): void {
-  try {
-    storage?.setItem(KEY, preference);
-  } catch {
-    // A theme is not worth failing a sit over.
-  }
+  writeText(storage, KEY, preference);
 }
 
 const LIGHT_QUERY = '(prefers-color-scheme: light)';

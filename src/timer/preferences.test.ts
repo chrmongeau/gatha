@@ -7,7 +7,7 @@ import {
   savePreferences,
   withDuration,
 } from './preferences';
-import type { StorageLike } from './active-session';
+import type { StorageLike } from '../storage';
 
 class MemoryStorage implements StorageLike {
   readonly items = new Map<string, string>();

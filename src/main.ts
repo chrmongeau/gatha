@@ -12,10 +12,12 @@ import { dayNumber } from './day';
 import { counts, hasSatOn } from './history/metrics';
 import {
   addSession,
+  anchorAsked,
   exportBackup,
   importBackup,
   loadAnchor,
   loadSessions,
+  markAnchorAsked,
   saveAnchor,
   type SessionRecord as LoggedSession,
 } from './history/store';
@@ -24,12 +26,8 @@ import { createPracticeView, reportResult } from './views/practice';
 import { createAudioEngine } from './timer/audio';
 import { bellDurationSeconds } from './timer/bell';
 import { systemClock } from './timer/clock';
-import {
-  clearActiveSession,
-  defaultStorage,
-  loadActiveSession,
-  saveActiveSession,
-} from './timer/active-session';
+import { clearActiveSession, loadActiveSession, saveActiveSession } from './timer/active-session';
+import { defaultStorage } from './storage';
 import { loadPreferences, savePreferences } from './timer/preferences';
 import { Session, endsAt, type SessionConfig, type SessionRecord } from './timer/session';
 import { createScreenWakeLock } from './timer/wakelock';
@@ -92,26 +90,6 @@ let theme: ThemePreference = loadPreference(storage);
 applyTheme(theme);
 watchSystemTheme(() => theme);
 
-const ANCHOR_ASKED_KEY = 'gatha.anchorAsked';
-
-/** Asked once, on a first run, however it is answered. */
-function anchorAsked(): boolean {
-  if (storage === null) return true;
-  try {
-    return storage.getItem(ANCHOR_ASKED_KEY) !== null;
-  } catch {
-    return true;
-  }
-}
-
-function markAnchorAsked(): void {
-  try {
-    storage?.setItem(ANCHOR_ASKED_KEY, '1');
-  } catch {
-    // Nothing to do about it.
-  }
-}
-
 void boot();
 
 async function boot(): Promise<void> {
@@ -146,6 +124,13 @@ function pending(): () => void {
   };
 }
 
+/** The one answer to "I'll sit after ___", however the screen asked for it. */
+function setAnchor(answer: string | null): void {
+  anchor = answer;
+  saveAnchor(answer, storage);
+  markAnchorAsked(storage);
+}
+
 function currentPassage(): Passage | null {
   if (corpus === null || passageUid === null) return null;
   return corpus.passages.get(passageUid) ?? null;
@@ -166,12 +151,8 @@ function showToday(): void {
     config,
     satToday: hasSatOn(sessions, dayNumber(new Date())),
     anchor,
-    askAnchor: !anchorAsked(),
-    onAnchorAnswer: (answer) => {
-      anchor = answer;
-      saveAnchor(answer, storage);
-      markAnchorAsked();
-    },
+    askAnchor: !anchorAsked(storage),
+    onAnchorAnswer: setAnchor,
     onBegin: (chosen) => {
       config = chosen;
       savePreferences(config, storage);
@@ -200,7 +181,6 @@ function showToday(): void {
 
 /** A stored session is only worth offering while it is still running. */
 function findResumableSession(): SessionRecord | null {
-  if (storage === null) return null;
   const record = loadActiveSession(storage);
   if (record === null) return null;
   if (endsAt(record) <= systemClock.wall()) {
@@ -241,11 +221,7 @@ function showPractice(): void {
     sessions,
     today: dayNumber(new Date()),
     anchor,
-    onAnchorChange: (answer) => {
-      anchor = answer;
-      saveAnchor(answer, storage);
-      markAnchorAsked();
-    },
+    onAnchorChange: setAnchor,
     onExport: () => {
       downloadBackup();
       reportResult(view, 'Saved.');
@@ -323,7 +299,7 @@ function showAfter(passage: Passage, recorded: boolean): void {
 function run(session: Session): void {
   const sessionConfig = session.record.config;
   sitting = true;
-  if (storage !== null) saveActiveSession(session.record, storage);
+  saveActiveSession(session.record, storage);
 
   const first = session.read();
   const passage = currentPassage();
@@ -385,7 +361,7 @@ function run(session: Session): void {
     document.removeEventListener('visibilitychange', onVisibilityChange);
     document.removeEventListener('resume', onResume);
     void wakeLock.release();
-    if (storage !== null) clearActiveSession(storage);
+    clearActiveSession(storage);
     closeAudio(engine, sessionConfig, elapsedMs, immediate);
   };
 

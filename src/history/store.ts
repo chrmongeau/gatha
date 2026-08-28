@@ -1,4 +1,4 @@
-import type { StorageLike } from '../timer/active-session';
+import { readJson, readText, removeStored, writeJson, writeText, type StorageLike } from '../storage';
 
 /**
  * The practice log. Local, and there is no backend and will not be one.
@@ -9,6 +9,7 @@ import type { StorageLike } from '../timer/active-session';
 
 const SESSIONS_KEY = 'gatha.sessions';
 const ANCHOR_KEY = 'gatha.anchor';
+const ANCHOR_ASKED_KEY = 'gatha.anchorAsked';
 const EXPORT_VERSION = 1;
 
 export interface SessionRecord {
@@ -30,19 +31,7 @@ export interface Backup {
 }
 
 export function loadSessions(storage: StorageLike | null): SessionRecord[] {
-  if (storage === null) return [];
-  let raw: string | null;
-  try {
-    raw = storage.getItem(SESSIONS_KEY);
-  } catch {
-    return [];
-  }
-  if (raw === null) return [];
-  try {
-    return parseSessions(JSON.parse(raw));
-  } catch {
-    return [];
-  }
+  return readJson(storage, SESSIONS_KEY, parseSessions, []);
 }
 
 /** Appended in order. A repeated start instant replaces rather than duplicates. */
@@ -52,34 +41,44 @@ export function addSession(record: SessionRecord, storage: StorageLike | null): 
   return sessions;
 }
 
-export function writeSessions(sessions: readonly SessionRecord[], storage: StorageLike | null): void {
-  if (storage === null) return;
-  try {
-    storage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-  } catch {
-    // A full quota should not take the sit down with it.
-  }
+/** A full quota should not take the sit down with it, so a failed write is quiet. */
+function writeSessions(sessions: readonly SessionRecord[], storage: StorageLike | null): void {
+  writeJson(storage, SESSIONS_KEY, sessions);
 }
 
 /** The if-then anchor: "I'll sit after ___". Asked once, never nagged (SPEC.md §7). */
 export function loadAnchor(storage: StorageLike | null): string | null {
-  if (storage === null) return null;
-  try {
-    const raw = storage.getItem(ANCHOR_KEY);
-    return raw === null || raw.trim() === '' ? null : raw;
-  } catch {
-    return null;
-  }
+  const raw = readText(storage, ANCHOR_KEY);
+  return raw === null || raw.trim() === '' ? null : raw;
 }
 
 export function saveAnchor(anchor: string | null, storage: StorageLike | null): void {
-  if (storage === null) return;
+  if (anchor === null || anchor.trim() === '') removeStored(storage, ANCHOR_KEY);
+  else writeText(storage, ANCHOR_KEY, anchor.trim());
+}
+
+/**
+ * Whether the anchor has been asked for. Asked once on a first run, however it
+ * is answered, and never again (SPEC.md §7).
+ *
+ * With no storage to remember the answer in, the honest reading is that it has
+ * been asked: better to leave the question unasked than to ask it every load.
+ */
+export function anchorAsked(storage: StorageLike | null): boolean {
+  if (storage === null) return true;
+  // The one read in the app that has to tell "not stored" apart from "cannot be
+  // stored", so it does its own catch rather than using the shared reader.
+  // Nowhere to record an answer would mean asking again on every single load,
+  // and §7 allows the question once. Better unasked than nagging.
   try {
-    if (anchor === null || anchor.trim() === '') storage.removeItem(ANCHOR_KEY);
-    else storage.setItem(ANCHOR_KEY, anchor.trim());
+    return storage.getItem(ANCHOR_ASKED_KEY) !== null;
   } catch {
-    // Nothing to do about it.
+    return true;
   }
+}
+
+export function markAnchorAsked(storage: StorageLike | null): void {
+  writeText(storage, ANCHOR_ASKED_KEY, '1');
 }
 
 /**
