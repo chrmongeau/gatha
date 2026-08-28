@@ -8,6 +8,7 @@ import {
   hasSatOn,
   intensity,
   totals,
+  weekdayOffset,
 } from './metrics';
 import { dayNumber } from '../day';
 import type { SessionRecord } from './store';
@@ -145,5 +146,37 @@ describe('hasSatOn', () => {
     expect(hasSatOn([sat(1)], TODAY)).toBe(false);
     expect(hasSatOn([sat(0)], TODAY)).toBe(true);
     expect(hasSatOn([sat(0, 1)], TODAY)).toBe(false);
+  });
+});
+
+/**
+ * Where a calendar column starts. Real arithmetic, previously inline in the DOM
+ * code that paints the squares, where nothing could reach it.
+ */
+describe('the calendar’s first column', () => {
+  // Day 0 of the epoch is 1 January 1970, a Thursday.
+  const THURSDAY = 0;
+
+  it('leaves room for the days of the week before the first one', () => {
+    // Monday first: Thursday is the fourth row down, so three blanks precede it.
+    expect(weekdayOffset(THURSDAY)).toBe(3);
+  });
+
+  it('starts a column on Monday with no blanks at all', () => {
+    // 5 January 1970 was a Monday.
+    expect(weekdayOffset(THURSDAY + 4)).toBe(0);
+  });
+
+  it('walks one row per day and wraps after seven', () => {
+    const week = [0, 1, 2, 3, 4, 5, 6].map((offset) => weekdayOffset(THURSDAY + offset));
+    expect(week).toEqual([3, 4, 5, 6, 0, 1, 2]);
+    expect(weekdayOffset(THURSDAY + 7)).toBe(3);
+  });
+
+  it('stays positive for a day before the epoch, which a badly set clock gives', () => {
+    // 31 December 1969 was a Wednesday: two rows down from Monday.
+    expect(weekdayOffset(-1)).toBe(2);
+    expect(weekdayOffset(-8)).toBe(2);
+    expect(weekdayOffset(-4)).toBe(6);
   });
 });

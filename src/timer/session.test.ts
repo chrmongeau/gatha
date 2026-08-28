@@ -7,6 +7,7 @@ import {
   endsAt,
   phaseAt,
   progressAt,
+  sittingMsAt,
   totalDurationMs,
   type ScheduledBell,
   type SessionConfig,
@@ -370,5 +371,60 @@ describe('the system clock changing mid-session', () => {
     clock.shiftWall(1_000);
 
     expect(session.read().elapsedMs).toBe(60_000);
+  });
+});
+
+/**
+ * What goes into the practice log.
+ *
+ * The rule from SPEC.md §7, which main.ts applies to every sit as it ends and
+ * which had no test of its own: a sit ended early is still a sit, it is counted
+ * from the opening bell rather than from when the phone was picked up, and it
+ * never counts for more than the silence that was chosen.
+ */
+describe('time actually sat', () => {
+  const TWENTY: SessionConfig = {
+    durationMs: 20 * 60_000,
+    intervalMs: null,
+    prepareMs: 10_000,
+    leadOutMs: 12_000,
+  };
+
+  it('is nothing at all through the preparation delay', () => {
+    expect(sittingMsAt(TWENTY, 0)).toBe(0);
+    expect(sittingMsAt(TWENTY, 9_999)).toBe(0);
+    expect(sittingMsAt(TWENTY, 10_000)).toBe(0);
+  });
+
+  it('counts from the opening bell, not from when the phone was set down', () => {
+    // Three minutes after the opening bell, on a sit that began ten seconds
+    // earlier: three minutes, not three minutes and ten seconds.
+    expect(sittingMsAt(TWENTY, 10_000 + 3 * 60_000)).toBe(3 * 60_000);
+  });
+
+  it('records a sit ended early as the time that was sat', () => {
+    const endedAt = 10_000 + 4 * 60_000;
+    expect(sittingMsAt(TWENTY, endedAt)).toBe(4 * 60_000);
+  });
+
+  it('never counts more than the silence chosen, however long the lead-out runs', () => {
+    expect(sittingMsAt(TWENTY, 10_000 + 20 * 60_000)).toBe(20 * 60_000);
+    expect(sittingMsAt(TWENTY, 10_000 + 20 * 60_000 + 12_000)).toBe(20 * 60_000);
+    expect(sittingMsAt(TWENTY, 10_000 + 60 * 60_000)).toBe(20 * 60_000);
+  });
+
+  it('is the elapsed time itself when there is no preparation delay', () => {
+    const immediate: SessionConfig = { ...TWENTY, prepareMs: 0 };
+    expect(sittingMsAt(immediate, 90_000)).toBe(90_000);
+  });
+
+  it('stays at nothing rather than going negative on a clock read before the start', () => {
+    expect(sittingMsAt(TWENTY, -5_000)).toBe(0);
+  });
+
+  it('falls under the two-minute floor for a sit abandoned in the first moments', () => {
+    // The value main.ts hands to counts(): under the floor, so the After screen
+    // says the sit was not recorded.
+    expect(sittingMsAt(TWENTY, 10_000 + 30_000)).toBeLessThan(2 * 60_000);
   });
 });

@@ -91,7 +91,13 @@ export function progressAt(config: SessionConfig, elapsedMs: number): number {
   return clamp(intoSilence / config.durationMs, 0, 1);
 }
 
-function sittingMsAt(config: SessionConfig, elapsedMs: number): number {
+/**
+ * Time actually sat, from the opening bell, clamped to the silence.
+ *
+ * What a tap reveals, and what goes into the log: a sit ended early is still a
+ * sit, and the preparation delay is not part of it.
+ */
+export function sittingMsAt(config: SessionConfig, elapsedMs: number): number {
   return clamp(elapsedMs - config.prepareMs, 0, config.durationMs);
 }
 

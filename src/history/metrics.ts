@@ -101,6 +101,17 @@ export function calendar(
 }
 
 /**
+ * How many blank squares come before the first day, so that each column of the
+ * calendar is a week beginning on Monday.
+ *
+ * Day 0 of the epoch was a Thursday, which is where the 3 comes from. The outer
+ * modulus keeps the answer positive for a day before the epoch.
+ */
+export function weekdayOffset(day: number): number {
+  return (((day + 3) % 7) + 7) % 7;
+}
+
+/**
  * How dark a square is drawn, from 0 to 1. Length shades a square; it never
  * scores one, and every day that met the floor is clearly marked whether it ran
  * two minutes or forty.

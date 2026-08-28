@@ -29,7 +29,7 @@ import { systemClock } from './timer/clock';
 import { clearActiveSession, loadActiveSession, saveActiveSession } from './timer/active-session';
 import { defaultStorage } from './storage';
 import { loadPreferences, savePreferences } from './timer/preferences';
-import { Session, endsAt, type SessionConfig, type SessionRecord } from './timer/session';
+import { Session, endsAt, sittingMsAt, type SessionConfig, type SessionRecord } from './timer/session';
 import { createScreenWakeLock } from './timer/wakelock';
 import { createAfterView } from './views/after';
 import { createDiscourseView } from './views/discourse';
@@ -407,7 +407,7 @@ function run(session: Session): void {
  */
 function record(session: Session, elapsedMs: number): boolean {
   const sessionConfig = session.record.config;
-  const satMs = Math.max(0, Math.min(elapsedMs - sessionConfig.prepareMs, sessionConfig.durationMs));
+  const satMs = sittingMsAt(sessionConfig, elapsedMs);
   if (satMs <= 0) return false;
 
   const entry: LoggedSession = {

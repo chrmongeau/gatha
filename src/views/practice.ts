@@ -4,6 +4,7 @@ import {
   daysInWindow,
   intensity,
   totals,
+  weekdayOffset,
   type DaySummary,
 } from '../history/metrics';
 import type { SessionRecord } from '../history/store';
@@ -183,9 +184,7 @@ export function reportResult(view: PracticeView, text: string): void {
  * from the ground it sits on.
  */
 function paintCalendar(into: HTMLElement, squares: readonly DaySummary[]): void {
-  const first = squares[0]?.day ?? 0;
-  // Day 0 of the epoch was a Thursday; shift so a week starts on Monday.
-  const offset = ((first + 3) % 7 + 7) % 7;
+  const offset = weekdayOffset(squares[0]?.day ?? 0);
   for (let i = 0; i < offset; i += 1) {
     const blank = document.createElement('span');
     blank.className = 'day day--blank';
