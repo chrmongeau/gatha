@@ -757,3 +757,62 @@ Worth recording: the worker version moved from `e815bb0ed814` to `f72ed71a2429`
 on this change, which is the icon-only case that the first, name-based hash would
 have missed — icon filenames carry no content hash. Good to have caught that a
 commit earlier rather than through an icon that never updated.
+
+---
+
+## A pass over the codebase, no behaviour changed
+
+Asked for after phase 5: what can be simplified without altering anything, and
+what is untested.
+
+**Storage was written out five times.** `loadPreferences`, `loadSessions`,
+`loadActiveSession`, the theme preference and the anchor-asked flag had each
+grown the same ladder — refuse a null storage, catch `getItem`, catch
+`JSON.parse`, fall back. `src/storage.ts` now says it once, and holds
+`StorageLike`, which had been living in `timer/active-session.ts` and dragging
+`history` and `theme` into importing from the timer for no reason but where it
+was first written. One exception is kept and commented: `anchorAsked` still has
+its own catch, because it is the only read that must tell "not stored" apart from
+"cannot be stored" — nowhere to record an answer would mean asking on every load,
+and §7 allows the question once. Nearly changed that behaviour by accident.
+
+**The views were unbinding listeners that were already going.** Fifteen
+`removeEventListener` calls, none of them on anything outliving the subtree being
+removed. `today.ts` proved it: the anchor prompt and the choice buttons in that
+same file bind and never unbind, and nothing leaks. Also hoisted two things every
+view was saying for itself — building the root element, and the rule for whether
+a passage is centred, whose 180-character threshold sat in Today and After
+separately, free to drift.
+
+**Seven exports were private in everything but name**, which `noUnusedLocals`
+cannot see. The audio engine's `volume` option was never passed; the knob stays
+in `bell.ts` where it is tested. And `main.ts` held the last Today view in a
+module variable nothing cleared.
+
+**Four tests, chosen for what was carrying weight without any.**
+
+- *The language fallback*, which has never run — `ACTIVE_LANGUAGE` is `'en'`, so
+  it is dormant until a second language ships. §15 asked for a single manual run
+  in phase 2 and then deletion; this keeps it, so the assumption is checked on
+  every commit rather than once, by a person who is no longer here.
+- *The calendar's Monday offset* — a magic 3 for the epoch being a Thursday, plus
+  a negative-day guard, inline in DOM code where nothing could reach it.
+- *Time actually sat*, which turned out to be duplication rather than a gap:
+  `main.ts` recomputed `sittingMsAt` by hand. It calls it now, and the rule has
+  tests.
+- *`formatDuration`*, which every digit on the Sitting screen goes through.
+
+Each set was mutation-checked — shift the epoch, drop the preparation delay from
+the clamp, remove the seconds padding, let the fallback overwrite — and each
+failure was caught by the test written for it. A test nobody has seen fail is a
+guess.
+
+**Deliberately not done.** The views still cannot be tested at all: vitest runs
+in `node`, so there is no DOM, and giving it one means `jsdom` or `happy-dom` as
+a dependency. That is a question for the owner, not a decision to take quietly,
+and it is parked until the app has been used for a week.
+
+**Left standing, worth a decision later.** A sit under two minutes is written to
+storage but reported as "not recorded" and filtered out of every view. Harmless —
+it never surfaces — but those rows accumulate in the log and in exported backups
+for good.
