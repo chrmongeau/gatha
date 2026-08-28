@@ -1,4 +1,4 @@
-import { query } from './dom';
+import { query, screenElement } from './dom';
 
 /**
  * Why the app measures what it measures (SPEC.md §7.3).
@@ -116,32 +116,32 @@ export interface MethodViewOptions {
   readonly onBack: () => void;
 }
 
+const MARKUP = `
+  <nav class="discourse__nav">
+    <button type="button" class="action action--quiet" data-role="back">Back</button>
+  </nav>
+  <article class="method">
+    <h1 class="method__title">What this app counts</h1>
+    <p class="method__lead">
+      There is no streak here. That is a decision rather than an oversight, and
+      this is the reasoning behind it.
+    </p>
+    <div data-role="claims"></div>
+    <h2 class="method__heading">And the one thing it asks of you</h2>
+    <div data-role="ask"></div>
+    <h2 class="method__heading">References</h2>
+    <ul class="method__references" data-role="references"></ul>
+    <h2 class="method__heading">Limitations</h2>
+    <ul class="method__limitations" data-role="limitations"></ul>
+    <p class="method__close">
+      These are the best available findings, not settled fact, and the app is
+      built on them provisionally.
+    </p>
+  </article>
+`;
+
 export function createMethodView(options: MethodViewOptions): MethodView {
-  const element = document.createElement('section');
-  element.className = 'screen screen--method';
-  element.innerHTML = `
-    <nav class="discourse__nav">
-      <button type="button" class="action action--quiet" data-role="back">Back</button>
-    </nav>
-    <article class="method">
-      <h1 class="method__title">What this app counts</h1>
-      <p class="method__lead">
-        There is no streak here. That is a decision rather than an oversight, and
-        this is the reasoning behind it.
-      </p>
-      <div data-role="claims"></div>
-      <h2 class="method__heading">And the one thing it asks of you</h2>
-      <div data-role="ask"></div>
-      <h2 class="method__heading">References</h2>
-      <ul class="method__references" data-role="references"></ul>
-      <h2 class="method__heading">Limitations</h2>
-      <ul class="method__limitations" data-role="limitations"></ul>
-      <p class="method__close">
-        These are the best available findings, not settled fact, and the app is
-        built on them provisionally.
-      </p>
-    </article>
-  `;
+  const element = screenElement('method', MARKUP);
 
   const claims = query(element, '[data-role="claims"]', HTMLElement);
   for (const [index, claim] of CLAIMS.entries()) {
@@ -203,13 +203,16 @@ export function createMethodView(options: MethodViewOptions): MethodView {
     limitations.append(item);
   }
 
-  const back = query(element, '[data-role="back"]', HTMLButtonElement);
-  back.addEventListener('click', options.onBack);
+  query(element, '[data-role="back"]', HTMLButtonElement).addEventListener('click', options.onBack);
 
   return {
     element,
+    /*
+     * The element and everything bound to it goes at once. No listener here is
+     * attached to anything that outlives this subtree — no document, no window —
+     * so unbinding them one by one was bookkeeping with nothing to keep.
+     */
     destroy(): void {
-      back.removeEventListener('click', options.onBack);
       element.remove();
     },
   };

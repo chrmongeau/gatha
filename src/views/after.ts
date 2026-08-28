@@ -1,5 +1,5 @@
 import type { Passage } from '../corpus/load';
-import { query } from './dom';
+import { query, renderPassage, screenElement } from './dom';
 
 /**
  * The bell has rung. The passage again, and the discourse it came from offered
@@ -39,29 +39,25 @@ const MARKUP = `
 `;
 
 export function createAfterView(options: AfterViewOptions): AfterView {
-  const element = document.createElement('section');
-  element.className = 'screen screen--after';
-  element.innerHTML = MARKUP;
+  const element = screenElement('after', MARKUP);
 
   // Plain confirmation, no score and no congratulation (SPEC.md §4).
   const recorded = query(element, '[data-role="recorded"]', HTMLElement);
   recorded.textContent = options.recorded ? 'Recorded.' : 'Not recorded — under two minutes.';
 
-  const passage = query(element, '.passage', HTMLElement);
-  passage.textContent = options.passage.text;
-  passage.dataset.length = options.passage.text.length > 180 ? 'long' : 'short';
-  query(element, '.passage__source', HTMLElement).textContent = options.passage.reference;
+  renderPassage(element, options.passage);
 
-  const read = query(element, '[data-role="read"]', HTMLButtonElement);
-  const done = query(element, '[data-role="done"]', HTMLButtonElement);
-  read.addEventListener('click', options.onRead);
-  done.addEventListener('click', options.onDone);
+  query(element, '[data-role="read"]', HTMLButtonElement).addEventListener('click', options.onRead);
+  query(element, '[data-role="done"]', HTMLButtonElement).addEventListener('click', options.onDone);
 
   return {
     element,
+    /*
+     * The element and everything bound to it goes at once. No listener here is
+     * attached to anything that outlives this subtree — no document, no window —
+     * so unbinding them one by one was bookkeeping with nothing to keep.
+     */
     destroy(): void {
-      read.removeEventListener('click', options.onRead);
-      done.removeEventListener('click', options.onDone);
       element.remove();
     },
   };

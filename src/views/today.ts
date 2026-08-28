@@ -6,7 +6,7 @@ import {
   intervalFits,
   withDuration,
 } from '../timer/preferences';
-import { query } from './dom';
+import { query, renderPassage, screenElement } from './dom';
 
 /**
  * The day's passage, its source, and one action: Begin.
@@ -72,22 +72,10 @@ const MARKUP = `
 `;
 
 export function createTodayView(options: TodayViewOptions): TodayView {
-  const element = document.createElement('section');
-  element.className = 'screen screen--today';
-  element.innerHTML = MARKUP;
+  const element = screenElement('today', MARKUP);
 
   const block = query(element, '.today__passage', HTMLElement);
-  const passage = query(element, '.passage', HTMLElement);
-  const source = query(element, '.passage__source', HTMLElement);
-
-  const showPassage = (next: Passage): void => {
-    // Canonical text, set verbatim from the corpus. textContent, never innerHTML.
-    passage.textContent = next.text;
-    // Short passages are centred; long ones are not (SPEC.md §9).
-    passage.dataset.length = next.text.length > 180 ? 'long' : 'short';
-    source.textContent = next.reference;
-  };
-  showPassage(options.passage);
+  renderPassage(element, options.passage);
 
   let config = options.config;
 
@@ -153,18 +141,12 @@ export function createTodayView(options: TodayViewOptions): TodayView {
   }
   paint();
 
-  const begin = query(element, '[data-role="begin"]', HTMLButtonElement);
-  const reroll = query(element, '[data-role="reroll"]', HTMLButtonElement);
-  const read = query(element, '[data-role="read"]', HTMLButtonElement);
-  const practice = query(element, '[data-role="practice"]', HTMLButtonElement);
-  practice.addEventListener('click', options.onPractice);
-
-  const onBegin = (): void => {
+  query(element, '[data-role="begin"]', HTMLButtonElement).addEventListener('click', () => {
     options.onBegin(config);
-  };
-  begin.addEventListener('click', onBegin);
-  reroll.addEventListener('click', options.onReroll);
-  read.addEventListener('click', options.onRead);
+  });
+  query(element, '[data-role="reroll"]', HTMLButtonElement).addEventListener('click', options.onReroll);
+  query(element, '[data-role="read"]', HTMLButtonElement).addEventListener('click', options.onRead);
+  query(element, '[data-role="practice"]', HTMLButtonElement).addEventListener('click', options.onPractice);
 
   return {
     element,
@@ -175,14 +157,15 @@ export function createTodayView(options: TodayViewOptions): TodayView {
       block.classList.remove('is-changing');
       void block.offsetWidth;
       block.classList.add('is-changing');
-      showPassage(next);
+      renderPassage(element, next);
     },
 
+    /*
+     * The element and everything bound to it goes at once. No listener here is
+     * attached to anything that outlives this subtree — no document, no window —
+     * so unbinding them one by one was bookkeeping with nothing to keep.
+     */
     destroy(): void {
-      begin.removeEventListener('click', onBegin);
-      reroll.removeEventListener('click', options.onReroll);
-      read.removeEventListener('click', options.onRead);
-      practice.removeEventListener('click', options.onPractice);
       element.remove();
     },
   };

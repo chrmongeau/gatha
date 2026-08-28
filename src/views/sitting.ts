@@ -95,9 +95,12 @@ export function createSittingView(options: SittingViewOptions): SittingView {
       else if (reading.phase === 'leadOut' || reading.finished) announce('The sit is complete.');
     },
 
+    /*
+     * The element and everything bound to it goes at once. No listener here is
+     * attached to anything that outlives this subtree — no document, no window —
+     * so unbinding them one by one was bookkeeping with nothing to keep.
+     */
     destroy(): void {
-      reveal.removeEventListener('click', onReveal);
-      end.removeEventListener('click', options.onEnd);
       element.remove();
     },
   };

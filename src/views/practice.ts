@@ -8,7 +8,7 @@ import {
 } from '../history/metrics';
 import type { SessionRecord } from '../history/store';
 import type { ThemePreference } from '../theme';
-import { query } from './dom';
+import { query, screenElement } from './dom';
 
 /**
  * The practice history. Reachable, but not prominent (SPEC.md §4).
@@ -103,9 +103,7 @@ const MARKUP = `
 `;
 
 export function createPracticeView(options: PracticeViewOptions): PracticeView {
-  const element = document.createElement('section');
-  element.className = 'screen screen--practice';
-  element.innerHTML = MARKUP;
+  const element = screenElement('practice', MARKUP);
 
   const sat = daysInWindow(options.sessions, options.today);
   query(element, '[data-role="fraction"]', HTMLElement).textContent = `${String(sat)}/${String(WINDOW_DAYS)}`;
@@ -146,35 +144,29 @@ export function createPracticeView(options: PracticeViewOptions): PracticeView {
 
   const anchor = query(element, '[data-role="anchor"]', HTMLInputElement);
   anchor.value = options.anchor ?? '';
-  const onAnchor = (): void => {
+  anchor.addEventListener('change', () => {
     options.onAnchorChange(anchor.value.trim() === '' ? null : anchor.value);
-  };
-  anchor.addEventListener('change', onAnchor);
-
-  const exportButton = query(element, '[data-role="export"]', HTMLButtonElement);
-  exportButton.addEventListener('click', options.onExport);
+  });
 
   const importInput = query(element, '[data-role="import"]', HTMLInputElement);
-  const onImport = (): void => {
+  importInput.addEventListener('change', () => {
     const file = importInput.files?.[0];
     if (file !== undefined) options.onImport(file);
     importInput.value = '';
-  };
-  importInput.addEventListener('change', onImport);
+  });
 
-  const method = query(element, '[data-role="method"]', HTMLButtonElement);
-  const back = query(element, '[data-role="back"]', HTMLButtonElement);
-  method.addEventListener('click', options.onMethod);
-  back.addEventListener('click', options.onBack);
+  query(element, '[data-role="export"]', HTMLButtonElement).addEventListener('click', options.onExport);
+  query(element, '[data-role="method"]', HTMLButtonElement).addEventListener('click', options.onMethod);
+  query(element, '[data-role="back"]', HTMLButtonElement).addEventListener('click', options.onBack);
 
   return {
     element,
+    /*
+     * The element and everything bound to it goes at once. No listener here is
+     * attached to anything that outlives this subtree — no document, no window —
+     * so unbinding them one by one was bookkeeping with nothing to keep.
+     */
     destroy(): void {
-      anchor.removeEventListener('change', onAnchor);
-      exportButton.removeEventListener('click', options.onExport);
-      importInput.removeEventListener('change', onImport);
-      method.removeEventListener('click', options.onMethod);
-      back.removeEventListener('click', options.onBack);
       element.remove();
     },
   };
