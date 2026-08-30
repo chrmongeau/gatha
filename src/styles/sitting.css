@@ -2,9 +2,14 @@
  * The Sitting screen. No numbers: a countdown invites clock-watching, which is
  * the opposite of the intended state (SPEC.md section 9).
  *
- * What is shown instead is a single hairline running the width of the screen,
- * filling imperceptibly from left to right — the incised line of a palm-leaf
- * strip — with interval bells cut into it as notches.
+ * What is shown instead is a single thin line running the width of the screen,
+ * filling from left to right — the incised line of a palm-leaf strip — with
+ * interval bells cut into it as notches.
+ *
+ * Thin, not invisible. The weights and tones are in tokens.css and were raised
+ * after a sit with the phone a metre away, where the unfilled part of the line
+ * could not be seen at all and so the filled part had nothing to be measured
+ * against.
  */
 .sitting {
   position: relative;

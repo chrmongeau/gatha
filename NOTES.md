@@ -855,3 +855,38 @@ Also corrected three stale entries in §13's layout while there: `streak.ts`,
 which was deliberately renamed `metrics.ts` in phase 3 and whose old name invites
 exactly the feature §7 rules out; a missing `storage.ts`; and `tts/` marked phase
 2 when it is phase 6.
+
+---
+
+## The line, made readable at a distance
+
+Reported after a sit with the phone about a metre away: the line was visible,
+but it was hard to see *where it had reached*. That second half is the whole
+diagnosis. The unfilled part of the line sat at 2.3∶1 against the ground — below
+the 3∶1 that a meaningful graphic needs — so what the eye found was a bright
+segment floating in the dark with nothing to measure it against. Not a faint
+line: no line, and half a line cannot show progress.
+
+Fixed on both axes, because neither alone was enough. The unfilled part lifts to
+3.3∶1 on ink and 3.1∶1 on leaf, and the part already cut goes to full leaf and
+full ink respectively, so the step between them stays 3.6∶1 and 3.8∶1. All six
+relationships now clear 3∶1; before, two of them did not. The line goes from two
+pixels to three and the notches from fourteen to sixteen: at a metre, two CSS
+pixels is roughly the width the eye can just resolve, which is not the width at
+which it can be read.
+
+The light theme needed its own answer. A leaf ground leaves less room beneath it
+than an ink ground leaves above, so soot could not be both dark enough for the
+cut and far enough from a visible track. Both parts are mixed with ink there now.
+
+§9 is amended rather than worked around: it asked for a *hairline* filling
+*imperceptibly*, and that is what was built. Restraint on this screen means one
+thin mark and no numbers — not a mark too faint to read.
+
+Two process notes worth keeping. A `str.replace` with no assertion silently did
+nothing, and the change appeared to be applied for three rounds until a measured
+render disagreed with the stylesheet; every scripted edit in this pass asserts
+now. And the first before/after comparison was worthless because the running
+session overwrote the fill on every animation frame, so both sides showed an
+empty line — the second used a static harness with each build's CSS inlined,
+which is also immune to a preview server that has quietly stopped.

@@ -627,9 +627,16 @@ long text; centre only the passage if it is short.
 **The Sitting screen shows no numbers.** A countdown invites clock-watching,
 which is the opposite of the intended state.
 
-Instead: a single hairline running the width of the screen, filling
-imperceptibly from left to right over the session — the incised line of a
-palm-leaf strip. Interval bells appear as small notches cut into the line at
+Instead: a single thin line running the width of the screen, filling from left
+to right over the session — the incised line of a palm-leaf strip.
+
+**Amended after use.** This was written as a *hairline* filling *imperceptibly*,
+and built at two pixels with the unfilled part at 2.3∶1 against the ground. On a
+phone propped a metre away that is not restraint, it is illegibility: the eye
+can just resolve a two-pixel line, and with the unfilled part invisible there is
+nothing to judge the filled part against, so the sit has no readable shape at
+all. The line is three pixels now and the unfilled part clears 3∶1. Restraint
+here means one thin mark and no numbers — not a mark too faint to read. Interval bells appear as small notches cut into the line at
 their positions, so the shape of the sit is legible at a glance without any
 digit being readable as time remaining. At the closing bell the line completes
 and the screen holds still for several seconds before offering anything.

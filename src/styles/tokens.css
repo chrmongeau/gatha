@@ -35,9 +35,14 @@
   --accent-text: color-mix(in srgb, var(--bronze) 95%, var(--leaf)); /* 4.7:1 */
 
   --hairline: color-mix(in srgb, var(--leaf) 22%, var(--ink));
-  --line-track: color-mix(in srgb, var(--leaf) 32%, var(--ink));
-  /* The part of the line already cut. Incised, so it reads against the ground. */
-  --line-cut: color-mix(in srgb, var(--leaf) 80%, var(--ink));
+  /*
+   * The part of the line still to run. Lifted from 32% to clear 3:1 against the
+   * ground: below that it is not a faint line, it is no line, and with nothing
+   * to compare against there is no way to see how far the cut has reached.
+   */
+  --line-track: color-mix(in srgb, var(--leaf) 45%, var(--ink)); /* 3.3:1 */
+  /* The part already cut. Full leaf, so the boundary between the two stays clear. */
+  --line-cut: var(--leaf); /* 11.9:1, and 3.6:1 against the track */
 }
 
 /*
@@ -59,21 +64,35 @@
   --accent-text: var(--accent);
 
   --hairline: color-mix(in srgb, var(--soot) 28%, var(--leaf));
-  --line-track: color-mix(in srgb, var(--soot) 45%, var(--leaf));
   /*
-   * On leaf the cut line is soot — a stylus mark rubbed dark, which is what an
-   * incised line literally is. On ink it lightens instead.
+   * A leaf ground leaves less room beneath it than an ink ground leaves above,
+   * so both parts of the line are darkened with ink rather than soot. At half
+   * ink the unfilled part clears 3∶1 against the ground and still stands 3.8∶1
+   * apart from the part already cut, which soot could not manage at both ends.
    */
-  --line-cut: var(--soot);
+  --line-track: color-mix(in srgb, var(--ink) 50%, var(--leaf)); /* 3.1:1 */
+  /*
+   * On leaf the cut line is dark — a stylus mark rubbed with soot, which is what
+   * an incised line literally is. On ink it lightens instead.
+   */
+  --line-cut: var(--ink); /* 11.9:1, and 3.8:1 against the track */
 }
 
 :root {
-  /* Weight of the incised line and of the notches cut into it. Not themed. */
-  --line-weight: 2px;
+  /*
+   * Weight of the incised line and of the notches cut into it. Not themed.
+   *
+   * Three pixels rather than two, because this screen is looked at from across
+   * a room as often as from arm's length. On a phone held a metre away, two CSS
+   * pixels is about the width the eye can just resolve — which is not the same
+   * as the width at which it can be read.
+   */
+  --line-weight: 3px;
+  --notch-weight: 3px;
+  --notch-height: 16px;
+
   /* Length of a cut rule where one separates blocks, rather than a full divider. */
   --rule-length: 3.5rem;
-  --notch-weight: 2px;
-  --notch-height: 14px;
 
   --step--1: 0.8125rem;
   --step-0: 1rem;
