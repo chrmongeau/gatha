@@ -87,9 +87,10 @@ comes back clean — everything after it is decoration on a timer that has to wo
   It is what makes the above testable.
 - Commit per logical change with a plain-English subject. No emoji, no
   `feat(scope):` prefixes.
-- **Commits are authored by the repository owner, with Claude as co-author.**
-  Set exactly this, and end the message with a
-  `Co-Authored-By: Claude <noreply@anthropic.com>` trailer:
+- **Commits are authored by the repository owner alone.** No
+  `Co-Authored-By` trailer and no other AI attribution (owner's decision,
+  2026-10-25; earlier commits carry one, later ones do not — don't re-ask).
+  Set exactly this:
 
   ```
   git config user.name  "Christian Mongeau"
