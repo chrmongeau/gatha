@@ -53,17 +53,17 @@ const MARKUP = `
       <div class="stepper" role="group" aria-labelledby="duration-label">
         <span class="choice__legend" id="duration-label">Duration</span>
         <span class="stepper__control">
-          <button type="button" class="stepper__button" data-role="duration-down" aria-label="Shorter sit">−</button>
+          <button type="button" class="stepper__button stepper__button--less" data-role="duration-down" aria-label="Shorter sit"></button>
           <output class="stepper__value" data-role="duration" aria-live="polite"></output>
-          <button type="button" class="stepper__button" data-role="duration-up" aria-label="Longer sit">+</button>
+          <button type="button" class="stepper__button stepper__button--more" data-role="duration-up" aria-label="Longer sit"></button>
         </span>
       </div>
       <div class="stepper" role="group" aria-labelledby="bell-label">
         <span class="choice__legend" id="bell-label">Bell</span>
         <span class="stepper__control">
-          <button type="button" class="stepper__button" data-role="bell-down" aria-label="Bell less often">−</button>
+          <button type="button" class="stepper__button stepper__button--less" data-role="bell-down" aria-label="Bell less often"></button>
           <output class="stepper__value" data-role="bell" aria-live="polite"></output>
-          <button type="button" class="stepper__button" data-role="bell-up" aria-label="Bell more often">+</button>
+          <button type="button" class="stepper__button stepper__button--more" data-role="bell-up" aria-label="Bell more often"></button>
         </span>
       </div>
     </div>

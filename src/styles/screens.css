@@ -128,20 +128,41 @@
   display: flex;
   width: max-content;
   align-items: center;
-  /* So the glyph, not its 48px target, lines up with the text above. */
-  margin-inline-start: calc((var(--space-1) - var(--tap)) / 2);
 }
 
 /*
  * The one place the app uses glyphs: − and + need no learning, sit where words
- * would not fit, and are text, so they grow with the font scale (Tacet rule 13).
+ * would not fit, and grow with the font scale (Tacet rule 13). Drawn as two
+ * lines rather than set as text, because the typeface draws its minus shorter
+ * and lighter than its plus and the pair looked mismatched on a phone.
  */
 .stepper__button {
+  position: relative;
   min-width: var(--tap);
   min-height: var(--tap);
   color: var(--text);
   font-size: var(--step-1);
-  line-height: 1;
+}
+
+.stepper__button::before,
+.stepper__button--more::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.7em;
+  height: max(1.5px, 0.09em);
+  background: currentcolor;
+  content: '';
+  transform: translate(-50%, -50%);
+}
+
+.stepper__button--more::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+/* So the drawn −, not its 48px target, starts on the margin with the label above. */
+.stepper__button--less {
+  margin-inline-start: calc(0.35em - var(--tap) / 2);
 }
 
 /* Unavailable at either end: Faded, never hidden (Tacet rule 5). */
