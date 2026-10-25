@@ -222,6 +222,7 @@
   min-height: var(--tap);
   padding: var(--space-1) 0;
   color: var(--text);
+  font-family: var(--font-ui);
   font-size: var(--type-body);
   font-weight: 500;
   /* A button centres its text, which shows only when a long action wraps. */
@@ -415,15 +416,23 @@
  */
 .title-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  /* Title and action share the first line's baseline, however the title wraps. */
+  align-items: baseline;
   justify-content: space-between;
   margin-bottom: var(--space-3);
   column-gap: var(--space-2);
 }
 
+/* A long title wraps in its own space, so the action keeps the top right. */
+.title-row > .action {
+  flex: none;
+}
+
 .title {
+  flex: 1;
   margin: 0;
+  /* Interface text, even on Method, whose body is set in the reading face. */
+  font-family: var(--font-ui);
   color: var(--text);
   font-size: var(--type-title);
   font-weight: 500;
