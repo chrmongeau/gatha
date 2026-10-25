@@ -965,3 +965,7 @@ there is somewhere to return to, and sits at the top of the column like any
 other message. Reproduced and verified in Chromium by aborting the
 discourse request. No unit test guards it: `message()` lives in `main.ts`,
 which boots the app on import, and the suite runs without a DOM. Known gap.
+
+**A press dims to half** (`base.css`), measured in Chromium while held; an
+unavailable button does not react. Reduced motion already removed every
+transition entirely; nothing else in rule 11 needed changing.

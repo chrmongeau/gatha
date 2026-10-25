@@ -35,6 +35,13 @@ button {
   cursor: pointer;
 }
 
+/* A press dims the pressed thing to half, and nothing else moves (Tacet rule 11). */
+button:active:not(:disabled),
+a:active,
+label.action:active {
+  opacity: 0.5;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
