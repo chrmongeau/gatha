@@ -230,8 +230,8 @@
 }
 
 .action--primary {
+  /* The column's full width: a narrower button, left-aligned, leaves a ragged right edge. */
   width: 100%;
-  max-width: 20rem;
   padding: var(--space-2) var(--space-3);
   text-align: center;
   border: 1px solid var(--accent);
