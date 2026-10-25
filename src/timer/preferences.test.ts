@@ -5,6 +5,8 @@ import {
   intervalFits,
   loadPreferences,
   savePreferences,
+  stepDuration,
+  stepInterval,
   withDuration,
 } from './preferences';
 import type { StorageLike } from '../storage';
@@ -90,5 +92,58 @@ describe('the interval bell and the duration together', () => {
     storage.items.set('gatha.preferences', JSON.stringify({ durationMs: 300_000, intervalMs: 900_000 }));
 
     expect(loadPreferences(storage).intervalMs).toBeNull();
+  });
+});
+
+const MIN = 60_000;
+const at = (durationMinutes: number, intervalMinutes: number | null) => ({
+  ...DEFAULT_CONFIG,
+  durationMs: durationMinutes * MIN,
+  intervalMs: intervalMinutes === null ? null : intervalMinutes * MIN,
+});
+
+describe('stepping the duration', () => {
+  it('moves one preset at a time', () => {
+    expect(stepDuration(at(10, null), 1)?.durationMs).toBe(15 * MIN);
+    expect(stepDuration(at(10, null), -1)?.durationMs).toBe(5 * MIN);
+    expect(stepDuration(at(5, null), -1)?.durationMs).toBe(2 * MIN);
+  });
+
+  it('stops at either end, so the button there is unavailable', () => {
+    expect(stepDuration(at(2, null), -1)).toBeNull();
+    expect(stepDuration(at(45, null), 1)).toBeNull();
+  });
+
+  it('lands on the nearest preset from a stored length that is not one', () => {
+    expect(stepDuration(at(12, null), 1)?.durationMs).toBe(15 * MIN);
+    expect(stepDuration(at(12, null), -1)?.durationMs).toBe(10 * MIN);
+  });
+
+  it('drops a bell that would no longer ring', () => {
+    expect(stepDuration(at(10, 5), -1)).toMatchObject({ durationMs: 5 * MIN, intervalMs: null });
+  });
+});
+
+describe('stepping the bell', () => {
+  it('goes from none up through the presets', () => {
+    expect(stepInterval(at(20, null), 1)?.intervalMs).toBe(5 * MIN);
+    expect(stepInterval(at(20, 5), 1)?.intervalMs).toBe(10 * MIN);
+    expect(stepInterval(at(20, 5), -1)?.intervalMs).toBeNull();
+  });
+
+  it('stops at none, and at the last bell that can ring in this sit', () => {
+    expect(stepInterval(at(20, null), -1)).toBeNull();
+    // A 10-minute bell cannot ring inside a 10-minute sit.
+    expect(stepInterval(at(10, 5), 1)).toBeNull();
+    expect(stepInterval(at(20, 15), 1)).toBeNull();
+  });
+
+  it('steps to the nearest preset from a stored bell that is not one', () => {
+    expect(stepInterval(at(30, 7), 1)?.intervalMs).toBe(10 * MIN);
+    expect(stepInterval(at(30, 7), -1)?.intervalMs).toBe(5 * MIN);
+  });
+
+  it('offers no bell at all in a sit too short for one', () => {
+    expect(stepInterval(at(5, null), 1)).toBeNull();
   });
 });

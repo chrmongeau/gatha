@@ -93,18 +93,29 @@
 /* ---------------------------------------------------------------- controls */
 
 .today__controls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  display: grid;
+  align-items: center;
+  /* Label column as wide as its longest label measures (Tacet rule 12). */
+  grid-template-columns: max-content max-content;
+  column-gap: var(--space-2);
 }
 
-.choice {
-  padding: 0;
-  border: 0;
-  margin: 0;
+.today__controls.is-stacked {
+  grid-template-columns: max-content;
+}
+
+/* Stacked, a label has to sit nearer its own stepper than the one above it. */
+.today__controls.is-stacked .stepper + .stepper > .choice__legend {
+  margin-top: var(--space-2);
+}
+
+/* Each row lays its two parts straight into the grid's columns. */
+.stepper {
+  display: contents;
 }
 
 .choice__legend {
+  width: max-content;
   padding: 0;
   color: var(--text-quiet);
   font-size: var(--step--1);
@@ -112,11 +123,40 @@
   text-transform: uppercase;
 }
 
-/* The unit lives here so the buttons can be bare numbers and fit one row. */
-.choice__unit {
-  letter-spacing: 0.08em;
-  opacity: 0.7;
-  text-transform: lowercase;
+.stepper__control {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  /* So the glyph, not its 48px target, lines up with the text above. */
+  margin-inline-start: calc((var(--space-1) - var(--tap)) / 2);
+}
+
+/*
+ * The one place the app uses glyphs: − and + need no learning, sit where words
+ * would not fit, and are text, so they grow with the font scale (Tacet rule 13).
+ */
+.stepper__button {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  color: var(--text);
+  font-size: var(--step-1);
+  line-height: 1;
+}
+
+/* Unavailable at either end: Faded, never hidden (Tacet rule 5). */
+.stepper__button:disabled {
+  color: var(--text-faded);
+  cursor: not-allowed;
+}
+
+.stepper__value {
+  /* Wide enough for "45 min", so + stays put as the value changes. */
+  min-width: 6.5ch;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .choice__row {
@@ -126,19 +166,10 @@
   margin-top: var(--space-1);
 }
 
-/* Equal columns, so all seven presets share one row however narrow the screen. */
-.choice__row--even {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
 /*
- * Bare numbers, not boxes. Eleven bordered rectangles were the least quiet
- * thing on the screen section 9 asks to keep quiet, and the choice is legible
- * without them: the legend says what the row is, and the chosen one carries a
- * mark. That mark is the same cut as everywhere else, and it grows outward from
- * the centre over a whole second, like a stylus drawing it.
+ * Bare words, not boxes; the chosen one carries a mark. That mark is the same
+ * cut as everywhere else, and it grows outward from the centre over a whole
+ * second, like a stylus drawing it.
  */
 .choice__button {
   min-width: 3.25rem;
@@ -159,22 +190,8 @@
 }
 
 /* Nothing frames these any more, so a pointer over one has to say so. */
-.choice__button:hover:not(:disabled) {
+.choice__button:hover {
   color: var(--text);
-}
-
-/*
- * An option that cannot be chosen right now reads differently from one that
- * merely is not chosen: Faded, never hidden (Tacet rule 5). An opacity did this
- * before and landed at 2.6:1 on leaf.
- */
-.choice__button:disabled {
-  color: var(--text-faded);
-  cursor: not-allowed;
-}
-
-.choice__row--even .choice__button {
-  min-width: 0;
 }
 
 /* ----------------------------------------------------------------- actions */

@@ -65,6 +65,32 @@ export function withDuration(config: SessionConfig, durationMs: number): Session
   };
 }
 
+/**
+ * One step of the duration stepper: the next preset up or down, or null at
+ * either end, which is what makes the button there unavailable. A stored length
+ * that is not a preset steps to the nearest one in that direction.
+ */
+export function stepDuration(config: SessionConfig, direction: 1 | -1): SessionConfig | null {
+  const next = stepFrom(DURATION_PRESETS_MS, config.durationMs, direction);
+  return next === undefined ? null : withDuration(config, next);
+}
+
+/**
+ * One step of the bell stepper, from none up through the presets. Stops at the
+ * last bell that can ring inside this sit rather than offering one that cannot.
+ */
+export function stepInterval(config: SessionConfig, direction: 1 | -1): SessionConfig | null {
+  const next = stepFrom(INTERVAL_PRESETS_MS, config.intervalMs, direction);
+  if (next === undefined || !intervalFits(next, config.durationMs)) return null;
+  return { ...config, intervalMs: next };
+}
+
+/** The nearest preset strictly above or below a value; no bell counts as zero. */
+function stepFrom<T extends number | null>(presets: readonly T[], from: T, direction: 1 | -1): T | undefined {
+  const ordered = direction === 1 ? presets : [...presets].reverse();
+  return ordered.find((ms) => ((ms ?? 0) - (from ?? 0)) * direction > 0);
+}
+
 export function loadPreferences(storage: StorageLike | null): SessionConfig {
   return readJson(storage, KEY, parse, DEFAULT_CONFIG);
 }

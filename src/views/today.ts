@@ -1,11 +1,6 @@
 import type { Passage } from '../corpus/load';
 import type { SessionConfig } from '../timer/session';
-import {
-  DURATION_PRESETS_MS,
-  INTERVAL_PRESETS_MS,
-  intervalFits,
-  withDuration,
-} from '../timer/preferences';
+import { stepDuration, stepInterval } from '../timer/preferences';
 import { query, renderPassage, screenElement } from './dom';
 
 /**
@@ -49,15 +44,27 @@ const MARKUP = `
       <p class="passage" lang="en"></p>
       <p class="passage__source"></p>
     </div>
-    <div class="today__controls">
-      <fieldset class="choice">
-        <legend class="choice__legend">Duration <span class="choice__unit">minutes</span></legend>
-        <div class="choice__row choice__row--even" data-role="durations"></div>
-      </fieldset>
-      <fieldset class="choice">
-        <legend class="choice__legend">Interval bell <span class="choice__unit">minutes</span></legend>
-        <div class="choice__row" data-role="intervals"></div>
-      </fieldset>
+    <!--
+      Steppers rather than rows of options: seven 48px targets do not fit a row
+      on a phone, and the value showing is the one chosen, so no marker is needed.
+    -->
+    <div class="today__controls steppers">
+      <div class="stepper" role="group" aria-labelledby="duration-label">
+        <span class="choice__legend" id="duration-label">Duration</span>
+        <span class="stepper__control">
+          <button type="button" class="stepper__button" data-role="duration-down" aria-label="Shorter sit">−</button>
+          <output class="stepper__value" data-role="duration" aria-live="polite"></output>
+          <button type="button" class="stepper__button" data-role="duration-up" aria-label="Longer sit">+</button>
+        </span>
+      </div>
+      <div class="stepper" role="group" aria-labelledby="bell-label">
+        <span class="choice__legend" id="bell-label">Bell</span>
+        <span class="stepper__control">
+          <button type="button" class="stepper__button" data-role="bell-down" aria-label="Bell less often">−</button>
+          <output class="stepper__value" data-role="bell" aria-live="polite"></output>
+          <button type="button" class="stepper__button" data-role="bell-up" aria-label="Bell more often">+</button>
+        </span>
+      </div>
     </div>
     <div class="today__actions">
       <button type="button" class="action action--primary" data-role="begin">Begin</button>
@@ -92,54 +99,55 @@ export function createTodayView(options: TodayViewOptions): TodayView {
 
   if (options.askAnchor) element.prepend(anchorPrompt(options.onAnchorAnswer));
 
-  const durations = query(element, '[data-role="durations"]', HTMLElement);
-  const intervals = query(element, '[data-role="intervals"]', HTMLElement);
+  const controls = query(element, '.steppers', HTMLElement);
+  const steppers = [
+    { role: 'duration', step: stepDuration, show: (c: SessionConfig) => minutes(c.durationMs) },
+    { role: 'bell', step: stepInterval, show: (c: SessionConfig) => (c.intervalMs === null ? 'None' : minutes(c.intervalMs)) },
+  ].map(({ role, step, show }) => ({
+    step,
+    show,
+    value: query(element, `[data-role="${role}"]`, HTMLOutputElement),
+    down: query(element, `[data-role="${role}-down"]`, HTMLButtonElement),
+    up: query(element, `[data-role="${role}-up"]`, HTMLButtonElement),
+  }));
 
   const paint = (): void => {
-    for (const button of durations.querySelectorAll('button')) {
-      button.setAttribute('aria-pressed', String(Number(button.dataset.ms) === config.durationMs));
-    }
-    for (const button of intervals.querySelectorAll('button')) {
-      const value = button.dataset.ms === '' ? null : Number(button.dataset.ms);
-      button.setAttribute('aria-pressed', String(value === config.intervalMs));
-      // An interval that cannot ring inside this sit is not offered. Disabled
-      // rather than hidden, so the row does not reflow as the duration changes.
-      button.disabled = !intervalFits(value, config.durationMs);
+    for (const stepper of steppers) {
+      stepper.value.textContent = stepper.show(config);
+      // Unavailable at either end rather than hidden, so nothing moves.
+      stepper.down.disabled = stepper.step(config, -1) === null;
+      stepper.up.disabled = stepper.step(config, 1) === null;
     }
   };
 
-  for (const ms of DURATION_PRESETS_MS) {
-    const minutes = Math.round(ms / 60_000);
-    durations.append(
-      choiceButton({
-        value: String(ms),
-        // Bare numbers, so all six presets fit one row on a narrow phone. The
-        // unit is in the legend, and the accessible name spells it out.
-        label: String(minutes),
-        description: `Sit for ${String(minutes)} minutes`,
-        onPick: () => {
-          config = withDuration(config, ms);
-          paint();
-        },
-      }),
-    );
-  }
-
-  for (const ms of INTERVAL_PRESETS_MS) {
-    const minutes = ms === null ? 0 : Math.round(ms / 60_000);
-    intervals.append(
-      choiceButton({
-        value: ms === null ? '' : String(ms),
-        label: ms === null ? 'None' : String(minutes),
-        description: ms === null ? 'No interval bell' : `Interval bell every ${String(minutes)} minutes`,
-        onPick: () => {
-          config = { ...config, intervalMs: ms };
-          paint();
-        },
-      }),
-    );
+  for (const stepper of steppers) {
+    for (const [button, direction] of [[stepper.down, -1], [stepper.up, 1]] as const) {
+      button.addEventListener('click', () => {
+        config = stepper.step(config, direction) ?? config;
+        paint();
+      });
+    }
   }
   paint();
+
+  /*
+   * Label and stepper share a line while they fit, in a grid whose label column
+   * is as wide as the longest label measures (Tacet rule 12). When they do not —
+   * font scale 2.0 on a 390px phone — each label goes above its stepper instead
+   * of the row running off the screen.
+   */
+  const widest = (selector: string): number =>
+    Math.max(...[...controls.querySelectorAll(selector)].map((part) => part.getBoundingClientRect().width));
+  const fit = (): void => {
+    // Both parts are max-content wide in either layout, so measuring them does
+    // not depend on the layout being decided — and deciding cannot loop.
+    const gap = parseFloat(getComputedStyle(controls).columnGap) || 0;
+    const needed = widest('.choice__legend') + gap + widest('.stepper__control');
+    controls.classList.toggle('is-stacked', needed > controls.clientWidth);
+  };
+  const resizes = 'ResizeObserver' in window ? new ResizeObserver(fit) : null;
+  resizes?.observe(controls);
+  for (const label of controls.querySelectorAll('.choice__legend')) resizes?.observe(label);
 
   query(element, '[data-role="begin"]', HTMLButtonElement).addEventListener('click', () => {
     options.onBegin(config);
@@ -166,9 +174,14 @@ export function createTodayView(options: TodayViewOptions): TodayView {
      * so unbinding them one by one was bookkeeping with nothing to keep.
      */
     destroy(): void {
+      resizes?.disconnect();
       element.remove();
     },
   };
+}
+
+function minutes(ms: number): string {
+  return `${String(Math.round(ms / 60_000))} min`;
 }
 
 /**
@@ -202,23 +215,4 @@ function anchorPrompt(onAnswer: (anchor: string | null) => void): HTMLElement {
   });
 
   return prompt;
-}
-
-interface Choice {
-  readonly value: string;
-  readonly label: string;
-  readonly description: string;
-  readonly onPick: () => void;
-}
-
-function choiceButton(choice: Choice): HTMLButtonElement {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'choice__button';
-  button.dataset.ms = choice.value;
-  button.textContent = choice.label;
-  button.setAttribute('aria-label', choice.description);
-  button.setAttribute('aria-pressed', 'false');
-  button.addEventListener('click', choice.onPick);
-  return button;
 }

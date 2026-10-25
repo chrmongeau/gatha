@@ -908,3 +908,13 @@ line was missed and restored. Every screen fell back to the browser default
 serif while `check-fonts` kept passing, because the bundled font did cover
 the corpus — nothing used it. `src/styles/tokens.test.ts` now fails on any
 `var()` with no definition; it failed on exactly these two before the fix.
+
+**Duration and bell are steppers.** "− 10 min +" and "− None +", stepping
+through the same presets; `stepDuration` and `stepInterval` hold the rules
+and are unit-tested. A step that is not possible (below 2 min, above 45, a
+bell that could not ring inside the sit) leaves its button Faded. Label and
+stepper share a line in a grid whose label column is as wide as the longest
+label measures; when that does not fit (font scale 2.0 at 390px) each label
+goes above its stepper. The decision is measured, not toggled-and-retried,
+so the ResizeObserver cannot loop. Seen in Chromium at 1.3 and 2.0, both
+themes; not yet on a phone.
