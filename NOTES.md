@@ -953,3 +953,8 @@ does not grow with the font scale) and 24px between sections. Today's and
 After's actions, the floor line and "Recorded." moved from centred to the
 left edge. Still centred, as agreed: a short passage (SPEC §9) and the
 Sitting screen.
+
+**Messages clear on the next action**: Practice's "Saved." or import result
+goes on the next tap or edit anywhere on the screen. An empty Practice says
+"Every sit of two minutes or more appears here." until the first sit that
+counts. Both checked in Chromium.

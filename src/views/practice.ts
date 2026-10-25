@@ -48,6 +48,7 @@ const MARKUP = `
       <h1 class="title">Practice</h1>
       <button type="button" class="action" data-role="back">Back</button>
     </header>
+    <p class="practice__empty" data-role="empty">Every sit of two minutes or more appears here.</p>
 
     <p class="practice__headline">
       <span class="practice__fraction" data-role="fraction"></span>
@@ -108,6 +109,8 @@ export function createPracticeView(options: PracticeViewOptions): PracticeView {
   query(element, '[data-role="fraction"]', HTMLElement).textContent = `${String(sat)}/${String(WINDOW_DAYS)}`;
 
   const overall = totals(options.sessions);
+  // Tacet rule 10: an empty screen says in one sentence how to fill it.
+  if (overall.days > 0) query(element, '[data-role="empty"]', HTMLElement).remove();
   query(element, '[data-role="total-days"]', HTMLElement).textContent = String(overall.days);
   query(element, '[data-role="total-hours"]', HTMLElement).textContent = String(
     Math.round(overall.totalMs / 3_600_000),
@@ -153,6 +156,13 @@ export function createPracticeView(options: PracticeViewOptions): PracticeView {
     if (file !== undefined) options.onImport(file);
     importInput.value = '';
   });
+
+  // A result clears on the next action (Tacet rule 10). Capture runs first, so
+  // the action that writes a new result still gets to write it.
+  const result = query(element, '[data-role="result"]', HTMLElement);
+  for (const type of ['click', 'change']) {
+    element.addEventListener(type, () => { result.textContent = ''; }, { capture: true });
+  }
 
   query(element, '[data-role="export"]', HTMLButtonElement).addEventListener('click', options.onExport);
   query(element, '[data-role="method"]', HTMLButtonElement).addEventListener('click', options.onMethod);
