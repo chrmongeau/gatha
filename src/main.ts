@@ -196,7 +196,7 @@ function resumeBanner(record: SessionRecord): HTMLElement {
   banner.className = 'resume';
   banner.innerHTML = `
     <p class="resume__text">A sit is already in progress.</p>
-    <button type="button" class="action action--quiet" data-role="resume">Resume it</button>
+    <button type="button" class="action" data-role="resume">Resume it</button>
   `;
   query(banner, '[data-role="resume"]', HTMLButtonElement).addEventListener('click', () => {
     run(Session.resume(record, systemClock));

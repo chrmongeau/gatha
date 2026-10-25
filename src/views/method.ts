@@ -117,11 +117,11 @@ export interface MethodViewOptions {
 }
 
 const MARKUP = `
-  <nav class="discourse__nav">
-    <button type="button" class="action action--quiet" data-role="back">Back</button>
-  </nav>
   <article class="method">
-    <h1 class="method__title">What this app counts</h1>
+    <header class="title-row">
+      <h1 class="title">What this app counts</h1>
+      <button type="button" class="action" data-role="back">Back</button>
+    </header>
     <p class="method__lead">
       There is no streak here. That is a decision rather than an oversight, and
       this is the reasoning behind it.

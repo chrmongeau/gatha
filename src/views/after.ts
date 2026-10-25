@@ -32,7 +32,7 @@ const MARKUP = `
     <div class="today__actions">
       <button type="button" class="action action--primary" data-role="read">Read the full discourse</button>
       <div class="today__quiet">
-        <button type="button" class="action action--quiet" data-role="done">Close</button>
+        <button type="button" class="action" data-role="done">Close</button>
       </div>
     </div>
   </article>

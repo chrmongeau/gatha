@@ -43,11 +43,11 @@ export interface PracticeViewOptions {
 const CALENDAR_DAYS = 7 * 17;
 
 const MARKUP = `
-  <nav class="discourse__nav">
-    <button type="button" class="action action--quiet" data-role="back">Back</button>
-  </nav>
   <article class="practice">
-    <h1 class="practice__title">Practice</h1>
+    <header class="title-row">
+      <h1 class="title">Practice</h1>
+      <button type="button" class="action" data-role="back">Back</button>
+    </header>
 
     <p class="practice__headline">
       <span class="practice__fraction" data-role="fraction"></span>
@@ -85,8 +85,8 @@ const MARKUP = `
         this survives a cleared cache or a new phone.
       </p>
       <div class="practice__row">
-        <button type="button" class="choice__button" data-role="export">Export</button>
-        <label class="choice__button practice__import">
+        <button type="button" class="action" data-role="export">Export</button>
+        <label class="action practice__import">
           Import
           <input type="file" accept="application/json,.json" data-role="import"
                  aria-label="Import a backup file" />
@@ -96,9 +96,7 @@ const MARKUP = `
     </section>
 
     <footer class="practice__footer">
-      <button type="button" class="action action--quiet" data-role="method">
-        Why this app counts what it counts
-      </button>
+      <button type="button" class="action" data-role="method">Read why it counts this</button>
     </footer>
   </article>
 `;

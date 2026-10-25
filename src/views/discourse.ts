@@ -19,8 +19,8 @@ export interface DiscourseViewOptions {
 }
 
 const MARKUP = `
-  <nav class="discourse__nav">
-    <button type="button" class="action action--quiet" data-role="back">Back</button>
+  <nav class="title-row title-row--bare">
+    <button type="button" class="action" data-role="back">Back</button>
   </nav>
   <article class="discourse" lang="en">
     <header class="discourse__header">

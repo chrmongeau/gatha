@@ -924,3 +924,13 @@ dot is generated content with empty alternative text (`content: '•' / ''`),
 so the accessible names stay "Dark", "Light", "System" (read from Chromium's
 accessibility tree); aria-pressed carries the state. Every option reserves
 the dot's width, so choosing one moves nothing.
+
+**Titles and actions (rules 1 and 2, one commit: they share the title
+row).** Practice and Method carry their title top left in the interface
+sans at medium weight, with Back at the right of the same row; Discourse is
+a reading page with no title, so Back sits alone at the right. Today, After
+and Sitting have no visible title, as Tacet allows where the content is the
+screen; their hidden `h1` stays. Every action is a verb in Ink, medium,
+including Export, Import and Save, which had been styled as options.
+Relabelled: "Show another passage", "See practice", "Skip", "Read why it
+counts this". Sitting's End stays Muted (owner's decision).

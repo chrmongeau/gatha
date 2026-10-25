@@ -70,9 +70,9 @@ const MARKUP = `
       <button type="button" class="action action--primary" data-role="begin">Begin</button>
       <p class="today__floor" data-role="floor"></p>
       <div class="today__quiet">
-        <button type="button" class="action action--quiet" data-role="reroll">Another passage</button>
-        <button type="button" class="action action--quiet" data-role="read">Read the discourse</button>
-        <button type="button" class="action action--quiet" data-role="practice">Practice</button>
+        <button type="button" class="action" data-role="reroll">Show another passage</button>
+        <button type="button" class="action" data-role="read">Read the discourse</button>
+        <button type="button" class="action" data-role="practice">See practice</button>
       </div>
     </div>
   </article>
@@ -197,8 +197,8 @@ function anchorPrompt(onAnswer: (anchor: string | null) => void): HTMLElement {
     <input class="practice__anchor" id="first-anchor" type="text" autocomplete="off"
            placeholder="my morning coffee" />
     <div class="practice__row">
-      <button type="submit" class="choice__button">Save</button>
-      <button type="button" class="action action--quiet" data-role="skip">Not now</button>
+      <button type="submit" class="action">Save</button>
+      <button type="button" class="action" data-role="skip">Skip</button>
     </div>
   `;
 
