@@ -40,7 +40,8 @@ const MARKUP = `
       screen reader cannot navigate, so the heading is present and unseen.
     -->
     <h1 class="visually-hidden">Today’s passage</h1>
-    <div class="today__passage">
+    <!-- Polite, so "Show another passage" is followed by the passage it showed (Tacet rule 16). -->
+    <div class="today__passage" aria-live="polite">
       <p class="passage" lang="en"></p>
       <p class="passage__source"></p>
     </div>

@@ -16,6 +16,8 @@ export interface SittingView {
 
 export interface SittingViewOptions {
   readonly config: SessionConfig;
+  /** True when a reload picked the sit up again, so it is not announced as beginning. */
+  readonly resumed: boolean;
   readonly onEnd: () => void;
 }
 
@@ -71,9 +73,8 @@ export function createSittingView(options: SittingViewOptions): SittingView {
   reveal.addEventListener('click', onReveal);
   end.addEventListener('click', options.onEnd);
 
-  /** Quiet for screen readers: the start and the end, never the progress. */
-  const announce = (message: string): void => {
-    if (announced === message) return;
+  const announce = (message: string | null): void => {
+    if (message === null || announced === message) return;
     announced = message;
     status.textContent = message;
   };
@@ -91,8 +92,7 @@ export function createSittingView(options: SittingViewOptions): SittingView {
         elapsed.textContent = text;
       }
 
-      if (reading.phase === 'sitting') announce('The sit has begun.');
-      else if (reading.phase === 'leadOut' || reading.finished) announce('The sit is complete.');
+      announce(announcement(reading, options.resumed));
     },
 
     /*
@@ -104,4 +104,17 @@ export function createSittingView(options: SittingViewOptions): SittingView {
       element.remove();
     },
   };
+}
+
+/**
+ * What a screen reader hears: the start and the end, never the progress
+ * (Tacet rule 16). Pure, so it can be checked without one; null means nothing
+ * new to say. The view says each message once.
+ */
+export function announcement(reading: SessionReading, resumed: boolean): string | null {
+  if (reading.phase === 'leadOut' || reading.phase === 'finished' || reading.finished) {
+    return 'The sit is complete.';
+  }
+  if (reading.phase === 'sitting') return resumed ? 'The sit has resumed.' : 'The sit has begun.';
+  return null;
 }

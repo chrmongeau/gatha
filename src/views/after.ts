@@ -23,8 +23,13 @@ export interface AfterViewOptions {
 
 const MARKUP = `
   <article class="after">
-    <h1 class="visually-hidden">The sit is over</h1>
-    <p class="after__recorded" data-role="recorded"></p>
+    <!--
+      Focus lands on the heading, so a screen reader hears whether the sit was
+      recorded before anything else (Tacet rule 16); the visible line says the
+      same, and is hidden from it so it is not heard twice.
+    -->
+    <h1 class="visually-hidden" tabindex="-1" data-role="heading"></h1>
+    <p class="after__recorded" data-role="recorded" aria-hidden="true"></p>
     <div class="today__passage">
       <p class="passage" lang="en"></p>
       <p class="passage__source"></p>
@@ -44,6 +49,7 @@ export function createAfterView(options: AfterViewOptions): AfterView {
   // Plain confirmation, no score and no congratulation (SPEC.md §4).
   const recorded = query(element, '[data-role="recorded"]', HTMLElement);
   recorded.textContent = options.recorded ? 'Recorded.' : 'Not recorded — under two minutes.';
+  query(element, '[data-role="heading"]', HTMLElement).textContent = `The sit is over. ${recorded.textContent}`;
 
   renderPassage(element, options.passage);
 

@@ -199,7 +199,7 @@ function resumeBanner(record: SessionRecord): HTMLElement {
     <button type="button" class="action" data-role="resume">Resume it</button>
   `;
   query(banner, '[data-role="resume"]', HTMLButtonElement).addEventListener('click', () => {
-    run(Session.resume(record, systemClock));
+    run(Session.resume(record, systemClock), true);
   });
   return banner;
 }
@@ -288,7 +288,7 @@ function showAfter(passage: Passage, recorded: boolean): void {
     },
     onDone: showToday,
   });
-  present(view, view.element.querySelector<HTMLElement>('[data-role="read"]'));
+  present(view, view.element.querySelector<HTMLElement>('[data-role="heading"]'));
 }
 
 /**
@@ -298,7 +298,7 @@ function showAfter(passage: Passage, recorded: boolean): void {
  * bell schedule and the wake lock all need the user gesture. After that the loop
  * only ever reads the clock.
  */
-function run(session: Session): void {
+function run(session: Session, resumed = false): void {
   const sessionConfig = session.record.config;
   sitting = true;
   saveActiveSession(session.record, storage);
@@ -324,7 +324,7 @@ function run(session: Session): void {
 
   void wakeLock.acquire();
 
-  const view = createSittingView({ config: sessionConfig, onEnd: endEarly });
+  const view = createSittingView({ config: sessionConfig, resumed, onEnd: endEarly });
 
   let frame = 0;
   let running = true;

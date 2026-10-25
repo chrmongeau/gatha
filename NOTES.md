@@ -969,3 +969,13 @@ which boots the app on import, and the suite runs without a DOM. Known gap.
 **A press dims to half** (`base.css`), measured in Chromium while held; an
 unavailable button does not react. Reduced motion already removed every
 transition entirely; nothing else in rule 11 needed changing.
+
+**What a screen reader hears** (rule 16). `announcement()` in
+`views/sitting.ts` is pure and unit-tested: nothing while preparing, "The
+sit has begun." (or "has resumed." after a reload), "The sit is complete.",
+and nothing as the sit runs. In Chromium the status node was written exactly
+twice over a whole two-minute sit with an interval bell. After moves focus
+to its heading, which now says whether the sit was recorded. "Show another
+passage" is followed by the passage, through a polite live region. **Not
+verified**: whether TalkBack actually speaks each of these, and when. That
+needs one pass on the phone with TalkBack on.
