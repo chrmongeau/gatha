@@ -890,3 +890,21 @@ now. And the first before/after comparison was worthless because the running
 session overwrote the fill on every animation frame, so both sides showed an
 empty line — the second used a static harness with each build's CSS inlined,
 which is also immune to a preview server that has quietly stopped.
+
+---
+
+## Following Tacet
+
+Gatha now follows the shared rules in Tacet (`~/tacet/DESIGN.md`, private
+repo chrmongeau/tacet). Settled with the owner on 2026-10-25, don't re-ask:
+duration and bell are steppers, not rows of options (the dot looked wrong
+there and seven 48px targets do not fit a row); the theme row on Practice
+uses Tacet's dot; Sitting's End stays Muted rather than Ink, because the line
+carries that screen's boldness; a short passage stays centred (SPEC §9).
+
+**The fonts had not been applied since the light theme.** That commit
+deleted `--font-ui` and `--font-canon` along with `--line-weight`; only the
+line was missed and restored. Every screen fell back to the browser default
+serif while `check-fonts` kept passing, because the bundled font did cover
+the corpus — nothing used it. `src/styles/tokens.test.ts` now fails on any
+`var()` with no definition; it failed on exactly these two before the fix.

@@ -91,6 +91,11 @@
   --notch-weight: 3px;
   --notch-height: 16px;
 
+  /* SPEC.md §9: a restrained system sans for the chrome, Gentium for canonical text. */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', roboto, sans-serif;
+  --font-canon: 'Gentium Plus', charter, 'Bitstream Charter', 'Iowan Old Style',
+    'Source Serif Pro', georgia, serif;
+
   /* Length of a cut rule where one separates blocks, rather than a full divider. */
   --rule-length: 3.5rem;
 
