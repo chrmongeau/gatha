@@ -979,3 +979,10 @@ to its heading, which now says whether the sit was recorded. "Show another
 passage" is followed by the passage, through a polite live region. **Not
 verified**: whether TalkBack actually speaks each of these, and when. That
 needs one pass on the phone with TalkBack on.
+
+**Checked here, and not.** Every screen in both themes at font scale 1.3
+and 2.0, emulated by setting the root font size in headless Chromium at
+390px; no overflow on any, and no console errors. Not checked: real Android
+text scaling, the steppers under a thumb, the dot and the type in a dim
+room, and TalkBack. Each needs the phone. Building locally needs Node 22
+(the font check uses `--experimental-strip-types`); CI already runs 22.
