@@ -503,6 +503,12 @@
   margin-bottom: var(--space-3);
 }
 
+/* The browser's own placeholder grey is no Tacet role and was not measured. */
+.practice__anchor::placeholder {
+  color: var(--text-quiet);
+  opacity: 1;
+}
+
 /* An input's edge says where to type, so it is Line, not Hairline (Tacet rule 6). */
 .practice__anchor {
   width: 100%;
