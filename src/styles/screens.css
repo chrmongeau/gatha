@@ -503,11 +503,12 @@
   margin-bottom: var(--space-3);
 }
 
+/* An input's edge says where to type, so it is Line, not Hairline (Tacet rule 6). */
 .practice__anchor {
   width: 100%;
   min-height: var(--tap);
   padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--line-track);
   border-radius: 2px;
   margin-top: var(--space-1);
   background: var(--raised);
