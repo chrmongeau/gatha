@@ -918,3 +918,9 @@ label measures; when that does not fit (font scale 2.0 at 390px) each label
 goes above its stepper. The decision is measured, not toggled-and-retried,
 so the ResizeObserver cannot loop. Seen in Chromium at 1.3 and 2.0, both
 themes; not yet on a phone.
+
+**The theme row uses Tacet's dot**, its one remaining row of options. The
+dot is generated content with empty alternative text (`content: '•' / ''`),
+so the accessible names stay "Dark", "Light", "System" (read from Chromium's
+accessibility tree); aria-pressed carries the state. Every option reserves
+the dot's width, so choosing one moves nothing.

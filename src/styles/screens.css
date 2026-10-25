@@ -167,26 +167,33 @@
 }
 
 /*
- * Bare words, not boxes; the chosen one carries a mark. That mark is the same
- * cut as everywhere else, and it grows outward from the centre over a whole
- * second, like a stylus drawing it.
+ * Bare words, not boxes. The chosen one carries Tacet's selected marker: a
+ * leading dot in the accent, with the word in Ink and medium weight (rule 4).
+ * Every option reserves the dot's space, so choosing one moves nothing.
  */
 .choice__button {
   min-width: 3.25rem;
   min-height: var(--tap);
   padding: var(--space-1);
-  background-image: linear-gradient(var(--accent), var(--accent));
-  background-position: center bottom 0.5rem;
-  background-repeat: no-repeat;
-  background-size: 0 var(--line-weight);
   color: var(--text-quiet);
   font-size: var(--step--1);
-  transition: background-size var(--fade) ease, color var(--fade) ease;
+}
+
+.choice__button[aria-pressed]::before {
+  margin-inline-end: 0.35em;
+  color: transparent;
+  content: '•';
+  /* Empty alternative text: aria-pressed already says which is chosen. */
+  content: '•' / '';
 }
 
 .choice__button[aria-pressed='true'] {
-  background-size: 1.5rem var(--line-weight);
   color: var(--text);
+  font-weight: 500;
+}
+
+.choice__button[aria-pressed='true']::before {
+  color: var(--accent);
 }
 
 /* Nothing frames these any more, so a pointer over one has to say so. */
