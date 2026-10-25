@@ -80,7 +80,7 @@
 
 .passage__source {
   margin: 0;
-  color: var(--text-faint);
+  color: var(--text-quiet);
   font-family: var(--font-canon);
   font-size: var(--step--1);
   letter-spacing: 0.06em;
@@ -106,7 +106,7 @@
 
 .choice__legend {
   padding: 0;
-  color: var(--text-faint);
+  color: var(--text-quiet);
   font-size: var(--step--1);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -210,7 +210,7 @@
 }
 
 .action--quiet {
-  color: var(--text-faint);
+  color: var(--text-quiet);
   font-size: var(--step--1);
   letter-spacing: 0.06em;
 }
@@ -265,7 +265,7 @@
 
 .discourse__reference {
   margin: 0;
-  color: var(--text-faint);
+  color: var(--text-quiet);
   font-size: var(--step--1);
   letter-spacing: 0.06em;
 }
@@ -314,7 +314,7 @@
 .discourse__credit {
   max-width: 52ch;
   margin: var(--space-2) 0 0;
-  color: var(--text-faint);
+  color: var(--text-quiet);
   font-size: var(--step--1);
   line-height: 1.5;
 }
@@ -339,7 +339,7 @@
 .today__floor {
   max-width: 32ch;
   margin: 0;
-  color: var(--text-faint);
+  color: var(--text-quiet);
   font-size: var(--step--1);
   text-align: center;
   text-wrap: pretty;
@@ -356,7 +356,7 @@
 
 .after__recorded {
   margin: 0;
-  color: var(--text-faint);
+  color: var(--text-quiet);
   font-size: var(--step--1);
   letter-spacing: 0.06em;
   text-align: center;
@@ -438,7 +438,7 @@
 }
 
 .practice__total dt {
-  color: var(--text-faint);
+  color: var(--text-quiet);
   font-size: var(--step--1);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -592,7 +592,7 @@
 /* Where the full text stands, so a link's value is known before following it. */
 .method__access {
   display: block;
-  color: var(--text-faint);
+  color: var(--text-quiet);
 }
 
 /*

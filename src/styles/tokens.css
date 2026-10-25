@@ -2,47 +2,50 @@
  * The palette is fixed; only which end of it is the ground changes.
  *
  * SPEC.md §9 grounds the whole design in the palm-leaf manuscript: a tan-olive
- * ground with near-black characters incised into it. Dark is the app's resting
- * state and its default, because the Sitting screen is looked at in a dim room.
- * Light is that manuscript the right way up — and it is what `--soot` was always
- * for, since §9 defines it as "secondary text on light ground" and the dark
- * theme never uses it.
+ * ground (leaf, D8CFBA) with near-black characters incised into it (ink,
+ * 121511), soot (3A3D36) for secondary text on a light ground, bronze (8E7B4A)
+ * as the one accent and dusk (1E231D) for raised surfaces. Dark is the app's
+ * resting state and its default, because the Sitting screen is looked at in a
+ * dim room. Light is that manuscript the right way up.
  *
- * Every text pair below is at or above 4.5:1 against its own ground, computed
- * rather than eyeballed.
+ * Each theme fills Tacet's colour roles (~/tacet/DESIGN.md), with its contrast
+ * against its own ground beside it. The values are literal rather than mixed
+ * in CSS, so what the browser paints is exactly what tokens.test.ts measures.
+ *
+ *   --text        Ink       7:1     content, titles, actions, selected
+ *   --text-quiet  Muted     4.5:1   secondary text, labels, unselected
+ *   --text-faded  Faded     ~3:1    unavailable actions and options
+ *   --line-track  Line      3:1     the unfilled line, input lines; never text
+ *   --hairline    Hairline  none    decorative separators only
+ *   --accent      Accent    3:1     marks: the dot, notches, focus, Begin's border
+ *   --accent-text Accent    4.5:1   the accent as text, for links
  */
-:root {
-  --ink: #121511;
-  --leaf: #d8cfba;
-  --soot: #3a3d36;
-  --bronze: #8e7b4a;
-  --dusk: #1e231d;
-}
 
 /* Dark, and the default when nothing has been chosen. */
 :root {
   color-scheme: dark;
 
-  --ground: var(--ink);
-  --raised: var(--dusk);
+  --ground: #121511;
+  --raised: #1e231d;
 
-  --text: var(--leaf);
-  --text-quiet: color-mix(in srgb, var(--leaf) 75%, var(--ink)); /* 7.1:1 */
-  --text-faint: color-mix(in srgb, var(--leaf) 57%, var(--ink)); /* 4.7:1 */
+  --text: #d8cfba; /* 11.9:1 */
+  --text-quiet: #a6a090; /* 7.1:1 */
+  /* Line's value, as in Walden: unavailable sits clearly below unselected. */
+  --text-faded: #6b695d; /* 3.3:1 */
 
-  /* Bronze is legible enough on ink to carry link text with a little lift. */
-  --accent: var(--bronze);
-  --accent-text: color-mix(in srgb, var(--bronze) 95%, var(--leaf)); /* 4.7:1 */
+  --accent: #8e7b4a; /* 4.45:1, enough for a mark */
+  /* Lifted 5% toward leaf so link text clears 4.5:1. */
+  --accent-text: #927f50; /* 4.7:1 */
 
-  --hairline: color-mix(in srgb, var(--leaf) 22%, var(--ink));
+  --hairline: #3e3e36; /* 1.7:1 */
   /*
-   * The part of the line still to run. Lifted from 32% to clear 3:1 against the
-   * ground: below that it is not a faint line, it is no line, and with nothing
-   * to compare against there is no way to see how far the cut has reached.
+   * The part of the line still to run. Below 3:1 it is not a faint line, it
+   * is no line, and with nothing to compare against there is no way to see
+   * how far the cut has reached.
    */
-  --line-track: color-mix(in srgb, var(--leaf) 45%, var(--ink)); /* 3.3:1 */
+  --line-track: #6b695d; /* 3.3:1 */
   /* The part already cut. Full leaf, so the boundary between the two stays clear. */
-  --line-cut: var(--leaf); /* 11.9:1, and 3.6:1 against the track */
+  --line-cut: #d8cfba; /* 11.9:1, and 3.6:1 against the track */
 }
 
 /*
@@ -52,30 +55,26 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --ground: var(--leaf);
-  --raised: color-mix(in srgb, var(--leaf) 92%, var(--soot));
+  --ground: #d8cfba;
+  --raised: #cbc3af;
 
-  --text: var(--ink);
-  --text-quiet: var(--soot); /* 7.1:1 */
-  --text-faint: color-mix(in srgb, var(--soot) 82%, var(--leaf)); /* 4.7:1 */
+  --text: #121511; /* 11.9:1 */
+  --text-quiet: #3a3d36; /* 7.1:1 */
+  --text-faded: #757266; /* 3.1:1 */
 
-  /* Bronze on leaf is only 2.7:1, so on a light ground it is deepened. */
-  --accent: color-mix(in srgb, var(--bronze) 50%, var(--ink)); /* 5.9:1 */
-  --accent-text: var(--accent);
+  /* Bronze on leaf is only 2.7:1, so on a light ground it is deepened halfway to ink. */
+  --accent: #50482e; /* 5.9:1 */
+  --accent-text: #50482e;
 
-  --hairline: color-mix(in srgb, var(--soot) 28%, var(--leaf));
+  --hairline: #aca695; /* 1.6:1 */
   /*
    * A leaf ground leaves less room beneath it than an ink ground leaves above,
-   * so both parts of the line are darkened with ink rather than soot. At half
-   * ink the unfilled part clears 3∶1 against the ground and still stands 3.8∶1
-   * apart from the part already cut, which soot could not manage at both ends.
+   * so the unfilled part is half ink: it clears 3:1 against the ground and
+   * still stands 3.8:1 apart from the part already cut.
    */
-  --line-track: color-mix(in srgb, var(--ink) 50%, var(--leaf)); /* 3.1:1 */
-  /*
-   * On leaf the cut line is dark — a stylus mark rubbed with soot, which is what
-   * an incised line literally is. On ink it lightens instead.
-   */
-  --line-cut: var(--ink); /* 11.9:1, and 3.8:1 against the track */
+  --line-track: #757266; /* 3.1:1 */
+  /* A stylus mark rubbed with soot, which is what an incised line literally is. */
+  --line-cut: #121511; /* 11.9:1, and 3.8:1 against the track */
 }
 
 :root {
