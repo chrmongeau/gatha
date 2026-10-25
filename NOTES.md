@@ -986,3 +986,11 @@ and 2.0, emulated by setting the root font size in headless Chromium at
 text scaling, the steppers under a thumb, the dot and the type in a dim
 room, and TalkBack. Each needs the phone. Building locally needs Node 22
 (the font check uses `--experimental-strip-types`); CI already runs 22.
+
+**After the first phone look (2026-10-25)**, three fixes. Begin spans the
+column: with its old 20rem cap and left alignment its right edge fell short
+on a 360px phone. The stepper's − and + are drawn as two equal CSS lines,
+because Roboto's minus is shorter and lighter than its plus. And Today's
+passage no longer stretches to fill the height: the passage, controls and
+actions are one block centred on the screen, which closed a gap of about
+100px between the source line and the controls to the column's 24px.

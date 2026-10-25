@@ -36,11 +36,17 @@
 
 /* ----------------------------------------------------------------- passage */
 
+/*
+ * The passage, the controls and the actions stay together and the group is
+ * centred on the screen. When the passage stretched to fill the height, the
+ * controls sat a hand's width below their passage on a tall phone.
+ */
 .today,
 .after {
   display: flex;
   flex: 1;
   flex-direction: column;
+  justify-content: safe center;
   width: 100%;
   max-width: 34rem;
   margin: 0 auto;
@@ -49,9 +55,7 @@
 
 .today__passage {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  justify-content: center;
   gap: var(--space-2);
 }
 
