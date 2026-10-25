@@ -261,6 +261,10 @@
   border: 1px solid var(--hairline);
   border-radius: 2px;
   gap: var(--space-1);
+  /* Inserted above the column rather than in it, so it takes the column's measure and spacing itself. */
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto var(--space-3);
 }
 
 .resume__text {
@@ -383,6 +387,10 @@
   border: 1px solid var(--hairline);
   border-radius: 2px;
   gap: var(--space-1);
+  /* Inserted above the column rather than in it, so it takes the column's measure and spacing itself. */
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto var(--space-3);
 }
 
 .after__recorded {
