@@ -947,3 +947,9 @@ for Practice's days-in-thirty. No Display: Gatha has no hero number, and
 SPEC §7 would not want one. Canonical text keeps its own reading scale
 (`--step-*`), as a reader's page does. Begin dropped from 20px to Body and is
 set apart by its border and ground, not its size.
+
+**One left-aligned column** with a 28px side margin (`--margin`, in px so it
+does not grow with the font scale) and 24px between sections. Today's and
+After's actions, the floor line and "Recorded." moved from centred to the
+left edge. Still centred, as agreed: a short passage (SPEC §9) and the
+Sitting screen.

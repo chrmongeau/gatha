@@ -7,7 +7,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-3)
+  padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--margin)
     calc(var(--space-3) + env(safe-area-inset-bottom));
 }
 
@@ -47,7 +47,7 @@
   width: 100%;
   max-width: 34rem;
   margin: 0 auto;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .today__passage {
@@ -166,7 +166,7 @@
 .choice__row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: 0 var(--space-3);
   margin-top: var(--space-1);
 }
 
@@ -178,7 +178,8 @@
 .choice__button {
   min-width: 3.25rem;
   min-height: var(--tap);
-  padding: var(--space-1);
+  /* No side padding, so the first dot sits on the margin with everything else. */
+  padding: var(--space-1) 0;
   color: var(--text-quiet);
   font-size: var(--type-body);
 }
@@ -210,7 +211,7 @@
 .today__actions {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
 }
 
@@ -250,9 +251,8 @@
 
 .today__quiet {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2);
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .resume {
@@ -376,7 +376,6 @@
   margin: 0;
   color: var(--text-quiet);
   font-size: var(--type-label);
-  text-align: center;
   text-wrap: pretty;
 }
 
@@ -394,7 +393,6 @@
   color: var(--text-quiet);
   font-size: var(--type-label);
   letter-spacing: 0.06em;
-  text-align: center;
 }
 
 /* ---------------------------------------------------------------- practice */
@@ -459,7 +457,7 @@
   grid-auto-columns: 0.75rem;
   grid-template-rows: repeat(7, 0.75rem);
   gap: 3px;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .day {
@@ -479,7 +477,7 @@
 .practice__totals {
   display: flex;
   flex-wrap: wrap;
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-3);
   gap: var(--space-4);
 }
 
@@ -565,7 +563,7 @@
 
 .practice__footer {
   padding-top: var(--space-3);
-  margin-top: var(--space-4);
+  margin-top: var(--space-3);
 }
 
 /* ------------------------------------------------------------------ method */

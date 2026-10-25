@@ -124,4 +124,6 @@
   --fade-slow: 2400ms;
 
   --tap: 48px;
+  /* Tacet rule 9: a 28dp side margin; px, so it does not grow with the font scale. */
+  --margin: 28px;
 }
