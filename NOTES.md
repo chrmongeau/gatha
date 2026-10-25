@@ -934,3 +934,8 @@ screen; their hidden `h1` stays. Every action is a verb in Ink, medium,
 including Export, Import and Save, which had been styled as options.
 Relabelled: "Show another passage", "See practice", "Skip", "Read why it
 counts this". Sitting's End stays Muted (owner's decision).
+
+**Every target is 48px** (`--tap`), measured on every screen in Chromium.
+The only exceptions are the DOI links inline in Method's citations: a 48px
+link would break the line, and WCAG 2.5.8 exempts inline targets. They are
+36px tall.
