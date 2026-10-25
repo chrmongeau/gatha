@@ -939,3 +939,11 @@ counts this". Sitting's End stays Muted (owner's decision).
 The only exceptions are the DOI links inline in Method's citations: a 48px
 link would break the line, and WCAG 2.5.8 exempts inline targets. They are
 36px tall.
+
+**Five type roles** (`--type-*` in `tokens.css`): Title 22px medium for
+screen titles, Body 17px for text, actions, options and values (medium for
+actions and selection), Label 13px for labels and secondary text, Item 32px
+for Practice's days-in-thirty. No Display: Gatha has no hero number, and
+SPEC §7 would not want one. Canonical text keeps its own reading scale
+(`--step-*`), as a reader's page does. Begin dropped from 20px to Body and is
+set apart by its border and ground, not its size.

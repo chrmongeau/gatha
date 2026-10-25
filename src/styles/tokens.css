@@ -98,7 +98,16 @@
   /* Length of a cut rule where one separates blocks, rather than a full divider. */
   --rule-length: 3.5rem;
 
-  --step--1: 0.8125rem;
+  /*
+   * Tacet's five type roles, for all interface text, chosen by role and not
+   * by size (rule 8). Display is Tacet's hero number; Gatha has none.
+   */
+  --type-item: 2rem;
+  --type-title: 1.375rem;
+  --type-body: 1.0625rem;
+  --type-label: 0.8125rem;
+
+  /* Canonical text keeps its own reading scale, as a reader's page does. */
   --step-0: 1rem;
   --step-1: 1.25rem;
   --step-2: 1.75rem;

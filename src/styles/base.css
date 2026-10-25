@@ -14,7 +14,7 @@ body {
   background: var(--ground);
   color: var(--text);
   font-family: var(--font-ui);
-  font-size: var(--step-0);
+  font-size: var(--type-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
