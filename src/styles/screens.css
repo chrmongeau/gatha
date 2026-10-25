@@ -25,15 +25,12 @@
   }
 }
 
-.screen--message {
-  align-items: center;
-  justify-content: center;
-}
-
+/* One Muted line at the top of the column, under Back when there is one (Tacet rule 10). */
 .message {
-  max-width: 30ch;
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
   color: var(--text-quiet);
-  text-align: center;
   text-wrap: pretty;
 }
 

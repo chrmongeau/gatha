@@ -213,7 +213,8 @@ async function showDiscourse(passage: Passage, back: () => void): Promise<void> 
     present(view, view.element.querySelector<HTMLElement>('[data-role="back"]'));
   } catch {
     settled();
-    present(message('That discourse could not be loaded.'));
+    const failed = message('That discourse could not be loaded.', back);
+    present(failed, failed.element.querySelector<HTMLElement>('[data-role="back"]'));
   }
 }
 
@@ -446,9 +447,17 @@ function closeAudio(
   }, tailMs);
 }
 
-function message(text: string): Screen {
+/** A whole-screen message, with Back wherever there is somewhere to go back to. */
+function message(text: string, onBack?: () => void): Screen {
   const element = document.createElement('section');
   element.className = 'screen screen--message';
+  if (onBack !== undefined) {
+    const nav = document.createElement('nav');
+    nav.className = 'title-row title-row--bare';
+    nav.innerHTML = '<button type="button" class="action" data-role="back">Back</button>';
+    query(nav, 'button', HTMLButtonElement).addEventListener('click', onBack);
+    element.append(nav);
+  }
   const paragraph = document.createElement('p');
   paragraph.className = 'message';
   paragraph.textContent = text;
